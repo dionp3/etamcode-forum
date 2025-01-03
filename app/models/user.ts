@@ -1,7 +1,7 @@
-import type { DateTime } from 'luxon'
+import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { afterCreate, BaseModel, column, hasOne } from '@adonisjs/lucid/orm'
+import { afterSave, BaseModel, column, hasOne } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import Profile from '#models/profile'
 import type { HasOne } from '@adonisjs/lucid/types/relations'
@@ -40,10 +40,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @afterCreate()
+  @afterSave()
   static async createProfile(user: User) {
     const existingProfile = await user.related('profile').query().first()
-
     if (!existingProfile) {
       await user.related('profile').create({ userId: user.id })
     }

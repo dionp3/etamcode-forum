@@ -37,7 +37,6 @@ export default class ProfilesController {
     const user = await User.findByOrFail('username', params.username)
     const profile = await Profile.findByOrFail('userId', user.id)
     await profile.load('user')
-    await profile.load('avatar')
 
     try {
       if (await bouncer.with('ProfilePolicy').denies('show', profile)) {
@@ -77,7 +76,8 @@ export default class ProfilesController {
    */
   async update({ bouncer, params, request, response, auth }: HttpContext) {
     // const data = request.only(['display_name', 'bio'])
-    const data = await request.validateUsing(updateProfileValidator)(data)
+    const data = await request.validateUsing(updateProfileValidator)
+    console.log(data)
     const user = await User.findByOrFail('username', params.username)
     const profile = await Profile.findByOrFail('userId', user.id)
     // await user.load('profile')
@@ -213,6 +213,7 @@ export default class ProfilesController {
         return response.json({ followers })
       }
       if (request.method() === 'POST') {
+        console.log(request.body())
         const { currentUserId, targetUserId } = request.body()
         const targetProfile = await Profile.findByOrFail('userId', targetUserId)
         const currentProfile = await Profile.findByOrFail('userId', currentUserId)

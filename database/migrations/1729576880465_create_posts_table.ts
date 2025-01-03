@@ -8,7 +8,13 @@ export default class extends BaseSchema {
       table.increments('id')
       table.integer('poster_id').notNullable().references('user_id').inTable('profiles')
       table.integer('forum_id').notNullable().references('id').inTable('forums')
-      table.integer('flair_id').nullable().references('id').inTable('flairs').defaultTo(null).onDelete('SET NULL')
+      table
+        .integer('flair_id')
+        .nullable()
+        .references('id')
+        .inTable('flairs')
+        .defaultTo(null)
+        .onDelete('SET NULL')
 
       table.string('title', 100).notNullable()
       table.string('slug').nullable()

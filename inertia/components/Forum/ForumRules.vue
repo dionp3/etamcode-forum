@@ -7,8 +7,7 @@ const Rules = ref([
   },
   {
     rules: 'No repost and spam',
-    describe:
-      'Unless it’s a question-type post and the answers in previous post have lost their relevance. OPs are expected to do a search or check for repost first before posting.',
+    describe: `Unless it’s a question-type post and the answers in previous post have lost their relevance. OPs are expected to do a search or check for repost first before posting.`,
   },
   {
     rules: 'No self-promotion/advertisement',
@@ -17,8 +16,7 @@ const Rules = ref([
   },
   {
     rules: ' DO NOT editorialise news headline ',
-    describe:
-      'Please put the original linked news headline with the exact same title. If it is a news video, use the title of the video. Posts that violate this rule will be removed. Once removed, feel free to repost it with the original title.',
+    describe: `Please put the original linked news headline with the exact same title. If it is a news video, use the title of the video. Posts that violate this rule will be removed. Once removed, feel free to repost it with the original title.`,
   },
   {
     rules: ' Put relevant flair/NSFW or spoiler tag on posts',

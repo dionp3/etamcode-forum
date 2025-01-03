@@ -5,9 +5,21 @@ export default class extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.integer('comment_id').notNullable().unsigned().references('id').inTable('comments').onDelete('CASCADE')
+      table
+        .integer('comment_id')
+        .notNullable()
+        .unsigned()
+        .references('id')
+        .inTable('comments')
+        .onDelete('CASCADE')
 
-      table.integer('creator_id').notNullable().unsigned().references('user_id').inTable('profiles').onDelete('CASCADE')
+      table
+        .integer('creator_id')
+        .notNullable()
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
 
       table.bigInteger('score').notNullable().defaultTo(0)
       table.bigInteger('upvotes').notNullable().defaultTo(0)
@@ -26,3 +38,4 @@ export default class extends BaseSchema {
     this.schema.dropTable(this.tableName)
   }
 }
+

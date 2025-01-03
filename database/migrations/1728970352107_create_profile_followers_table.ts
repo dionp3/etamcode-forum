@@ -7,8 +7,18 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id').notNullable()
 
-      table.integer('follower_id').unsigned().references('user_id').inTable('profiles').onDelete('CASCADE')
-      table.integer('following_id').unsigned().references('user_id').inTable('profiles').onDelete('CASCADE')
+      table
+        .integer('follower_id')
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
+      table
+        .integer('following_id')
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
       table.primary(['following_id', 'follower_id'])
       table.unique(['following_id', 'follower_id'])
       table.index(['following_id', 'follower_id'])

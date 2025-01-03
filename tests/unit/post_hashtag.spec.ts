@@ -16,7 +16,10 @@ test.group('Forum followers', (group) => {
     await db.rollbackGlobalTransaction()
   })
   test('Can attach hashtag', async ({ assert }) => {
-    const user = await User.query().where('username', 'authorizeduser').preload('profile').firstOrFail()
+    const user = await User.query()
+      .where('username', 'authorizeduser')
+      .preload('profile')
+      .firstOrFail()
     const forum = await Forum.query()
       .where('isRemoved', false)
       .andWhere('isDeleted', false)
@@ -24,7 +27,9 @@ test.group('Forum followers', (group) => {
       .andWhere('isPostingRestricted', false)
       .andWhere('visibility', 'public')
       .has('posts')
-      .preload('posts', (post) => post.where('isRemoved', false).andWhere('isLocked', false).has('comments'))
+      .preload('posts', (post) =>
+        post.where('isRemoved', false).andWhere('isLocked', false).has('comments')
+      )
       .firstOrFail()
 
     // const post = forum.posts[0]

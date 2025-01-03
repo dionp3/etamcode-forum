@@ -1,0 +1,131 @@
+<script lang="ts" setup>
+import { formatDistanceToNowStrict } from 'date-fns'
+import { Link } from '@inertiajs/vue3'
+import { MessageSquareText, Share, ArrowBigUp, ArrowBigDown } from 'lucide-vue-next'
+import type Post from '#models/post'
+import markdownit from 'markdown-it'
+import hljs from 'highlight.js'
+// Props
+const props = defineProps<{
+  post: Post
+}>()
+
+const md = markdownit({
+  highlight: (str, lang) => {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(str, { language: lang }).value
+      } catch (__) {}
+    }
+
+    return '' // use external default escaping
+  },
+})
+
+// Render the Markdown content to HTML
+
+// Compute the time since the post was created
+const formatDate = (date: string) =>
+  formatDistanceToNowStrict(new Date(date), {
+    addSuffix: true,
+  })
+
+// Sample Markdown content with code blocks
+const sampleMarkdownContent = `
+# Sample Post Title
+
+Here is some text with a code block:
+
+\`\`\`javascript
+function greet() {
+  console.log("Hello, world!");
+}
+\`\`\`
+
+And here’s another code block in Python:
+
+\`\`\`python
+def greet():
+    print("Hello, world!")
+\`\`\`
+
+Here's a regular paragraph for context.
+`
+
+//const renderedContent = md.render(props.post.content || '')
+
+const renderedContent = md.render(sampleMarkdownContent)
+</script>
+
+<template>
+  <div class="card shadow">
+    <div class="card-body">
+      <div class="flex justify-between items-start">
+        <!-- Post Info (Forum Name, User Info) -->
+        <div class="flex items-center space-x-3">
+          <!-- Avatar -->
+          <div class="avatar">
+            <div v-if="post.poster" class="w-8 h-8 rounded-full">
+              <img
+                :src="
+                  post.poster.icon?.url
+                    ? post.poster.icon?.url
+                    : `https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp`
+                "
+                alt="Forum Icon"
+              />
+            </div>
+          </div>
+
+          <!-- User Info -->
+          <div class="flex flex-col">
+            <div class="flex items-center space-x-3">
+              <p v-if="post.forum" class="text-sm font-semibold">
+                <Link :href="`/f/${post.forum.name}`">{{ post.forum.name }}</Link>
+              </p>
+              <p class="text-xs text-gray-400">{{ formatDate(post.createdAt.toString()) }}</p>
+            </div>
+            <p v-if="post.poster?.user" class="text-xs text-gray-500">
+              <Link v-if="post.poster" :href="`/u/${post.poster.user.username}`">
+                {{ post.poster.displayName || 'u/' + post.poster.user.username }}
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Post Content -->
+      <h2 class="card-title">{{ post.title }}</h2>
+      <div v-html="renderedContent" class="prose"></div>
+      <!-- Render Markdown content with syntax highlighting -->
+
+      <!-- Post Image -->
+      <figure v-if="post.imageUrl != null">
+        <img :src="post.imageUrl" alt="Post Image" class="rounded-xl" />
+      </figure>
+
+      <!-- Post Actions -->
+      <div class="flex flex-wrap gap-2 items-center">
+        <!-- Upvote / Downvote Section -->
+        <div class="join">
+          <button @click="" class="btn btn-sm join-item rounded-full">
+            <ArrowBigUp />
+          </button>
+          <span class="btn-sm bg-base-200 join-item">∞</span>
+          <!-- Replace with dynamic vote count -->
+          <button @click="" class="btn btn-sm join-item rounded-full">
+            <ArrowBigDown />
+          </button>
+        </div>
+
+        <!-- Share and Comment Section -->
+        <button class="btn btn-sm rounded-full">
+          <Share />
+        </button>
+        <button class="btn btn-sm rounded-full">
+          <MessageSquareText />{{ post.$extras?.total_comments || 99 }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

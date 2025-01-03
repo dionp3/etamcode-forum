@@ -19,7 +19,10 @@ test.group('Forum moderators', (g) => {
     const forumWithCreator = await Forum.query()
       .whereHas('moderators', () => {})
       .firstOrFail()
-    let forumModerators = await forumWithCreator.related('moderators').query().orderBy('pivot_created_at', 'asc')
+    let forumModerators = await forumWithCreator
+      .related('moderators')
+      .query()
+      .orderBy('pivot_created_at', 'asc')
     const forumCreator = forumModerators[0]
     await forumCreator.load('user')
     const regularUser = await Profile.query()
@@ -35,7 +38,10 @@ test.group('Forum moderators', (g) => {
       .withCsrfToken()
       .withInertia()
 
-    forumModerators = await forumWithCreator.related('moderators').query().orderBy('pivot_created_at', 'desc')
+    forumModerators = await forumWithCreator
+      .related('moderators')
+      .query()
+      .orderBy('pivot_created_at', 'desc')
     assert.equal(response.status(), 200)
     assert.equal(forumModerators[0].userId, regularUser.userId)
   })
@@ -45,7 +51,10 @@ test.group('Forum moderators', (g) => {
       .has('moderators', '<=', 3)
       .andHas('moderators', '>', 1)
       .firstOrFail()
-    let forumModerators = await forumWithModerators.related('moderators').query().orderBy('pivot_created_at', 'asc')
+    let forumModerators = await forumWithModerators
+      .related('moderators')
+      .query()
+      .orderBy('pivot_created_at', 'asc')
     assert.approximately(forumModerators.length, 2, 3)
     const forumMod = forumModerators[1]
     await forumMod.load('user')
@@ -62,7 +71,10 @@ test.group('Forum moderators', (g) => {
       .withCsrfToken()
       .withInertia()
 
-    forumModerators = await forumWithModerators.related('moderators').query().orderBy('pivot_created_at', 'desc')
+    forumModerators = await forumWithModerators
+      .related('moderators')
+      .query()
+      .orderBy('pivot_created_at', 'desc')
     assert.equal(response.status(), 200)
     assert.equal(forumModerators[0].userId, regularUser.userId)
   })
@@ -72,7 +84,10 @@ test.group('Forum moderators', (g) => {
       .has('moderators', '<=', 3)
       .andHas('moderators', '>', 1)
       .firstOrFail()
-    const forumModerators = await forumWithModerators.related('moderators').query().orderBy('pivot_created_at', 'asc')
+    let forumModerators = await forumWithModerators
+      .related('moderators')
+      .query()
+      .orderBy('pivot_created_at', 'asc')
     assert.approximately(forumModerators.length, 2, 3)
     const forumMod = forumModerators[1]
     await forumMod.load('user')

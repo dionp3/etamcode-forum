@@ -17,8 +17,15 @@ test.group('Post votes', (g) => {
     await db.rollbackGlobalTransaction()
   })
 
-  test('Returns 200 when authenticated user upvotes a non restricted posts', async ({ assert, client }) => {
-    const post = await Post.query().where('isRemoved', false).preload('forum').preload('voters').firstOrFail()
+  test('Returns 200 when authenticated user upvotes a non restricted posts', async ({
+    assert,
+    client,
+  }) => {
+    const post = await Post.query()
+      .where('isRemoved', false)
+      .preload('forum')
+      .preload('voters')
+      .firstOrFail()
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, postSlug: post.slug }
     const response = await client
@@ -30,7 +37,7 @@ test.group('Post votes', (g) => {
     assert.equal(response.body().message, 'Post upvoted')
     await post.refresh()
     await post.load('voters')
-    const vote = post.voters.find((voter) => voter.userId === user.id)
+    let vote = post.voters.find((voter) => voter.userId === user.id)
     assert.exists(vote)
     assert.equal(vote?.$extras.pivot_score, 1)
   })
@@ -40,7 +47,11 @@ test.group('Post votes', (g) => {
     client,
   }) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
-    const post = await Post.query().where('isRemoved', false).preload('forum').preload('voters').firstOrFail()
+    const post = await Post.query()
+      .where('isRemoved', false)
+      .preload('forum')
+      .preload('voters')
+      .firstOrFail()
     const data = { userId: user.id, postSlug: post.slug }
     const response = await client
       .post(`/api/f/${post.forum.name}/posts/${post.slug}/upvote`)
@@ -51,8 +62,15 @@ test.group('Post votes', (g) => {
     assert.equal(response.body().props.isAuth, false)
   })
 
-  test('Returns 200 when authenticated user downvotes a non restricted post', async ({ assert, client }) => {
-    const post = await Post.query().where('isRemoved', false).preload('forum').preload('voters').firstOrFail()
+  test('Returns 200 when authenticated user downvotes a non restricted post', async ({
+    assert,
+    client,
+  }) => {
+    const post = await Post.query()
+      .where('isRemoved', false)
+      .preload('forum')
+      .preload('voters')
+      .firstOrFail()
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, postSlug: post.slug }
     const response = await client
@@ -64,7 +82,7 @@ test.group('Post votes', (g) => {
     assert.equal(response.body().message, 'Post downvoted')
     await post.refresh()
     await post.load('voters')
-    const vote = post.voters.find((voter) => voter.userId === user.id)
+    let vote = post.voters.find((voter) => voter.userId === user.id)
     assert.exists(vote)
     assert.equal(vote?.$extras.pivot_score, -1)
   })
@@ -74,7 +92,11 @@ test.group('Post votes', (g) => {
     client,
   }) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
-    const post = await Post.query().where('isRemoved', false).preload('forum').preload('voters').firstOrFail()
+    const post = await Post.query()
+      .where('isRemoved', false)
+      .preload('forum')
+      .preload('voters')
+      .firstOrFail()
     const data = { userId: user.id, postSlug: post.slug }
     const response = await client
       .post(`/api/f/${post.forum.name}/posts/${post.slug}/downvote`)
@@ -85,8 +107,15 @@ test.group('Post votes', (g) => {
     assert.equal(response.body().props.isAuth, false)
   })
 
-  test('Returns 403 when authenticated user upvotes restricted posts', async ({ assert, client }) => {
-    const post = await Post.query().where('isRemoved', true).preload('forum').preload('voters').firstOrFail()
+  test('Returns 403 when authenticated user upvotes restricted posts', async ({
+    assert,
+    client,
+  }) => {
+    const post = await Post.query()
+      .where('isRemoved', true)
+      .preload('forum')
+      .preload('voters')
+      .firstOrFail()
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, postSlug: post.slug }
     const response = await client
@@ -98,8 +127,15 @@ test.group('Post votes', (g) => {
     assert.equal(response.body().message, "Can't upvote this post")
   })
 
-  test('Returns 403 when authenticated user downvotes restricted posts', async ({ assert, client }) => {
-    const post = await Post.query().where('isRemoved', true).preload('forum').preload('voters').firstOrFail()
+  test('Returns 403 when authenticated user downvotes restricted posts', async ({
+    assert,
+    client,
+  }) => {
+    const post = await Post.query()
+      .where('isRemoved', true)
+      .preload('forum')
+      .preload('voters')
+      .firstOrFail()
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, postSlug: post.slug }
     const response = await client
@@ -112,7 +148,11 @@ test.group('Post votes', (g) => {
   })
 
   test('Returns 200 and switch upvote and downvote', async ({ assert, client }) => {
-    const post = await Post.query().where('isRemoved', false).doesntHave('voters').preload('forum').firstOrFail()
+    const post = await Post.query()
+      .where('isRemoved', false)
+      .doesntHave('voters')
+      .preload('forum')
+      .firstOrFail()
     const user = await User.findByOrFail('username', 'authorizeduser')
     await user.load('profile')
     const data = { userId: user.id, postSlug: post.slug }
@@ -127,7 +167,7 @@ test.group('Post votes', (g) => {
 
     await post.refresh()
     await post.load('voters')
-    const upvotePost = post.voters.find((voter) => voter.userId === user.id)
+    let upvotePost = post.voters.find((voter) => voter.userId === user.id)
     assert.exists(upvotePost)
     assert.equal(upvotePost?.$extras.pivot_score, 1)
 
@@ -140,7 +180,7 @@ test.group('Post votes', (g) => {
     assert.equal(downvoteResponse.body().message, 'Post downvoted')
     await post.refresh()
     await post.load('voters')
-    const downvotePost = post.voters.find((voter) => voter.userId === user.id)
+    let downvotePost = post.voters.find((voter) => voter.userId === user.id)
     assert.exists(downvotePost)
     assert.equal(downvotePost?.$extras.pivot_score, -1)
   })

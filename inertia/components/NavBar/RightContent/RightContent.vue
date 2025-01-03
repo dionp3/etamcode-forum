@@ -1,52 +1,49 @@
 <script lang="ts" setup>
-import { usePage } from '@inertiajs/vue3'
-import axios from 'axios'
-import type { SharedProps } from '@adonisjs/inertia/types'
+import { router, usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import { BadgePlus } from 'lucide-vue-next'
+import type { User } from '~/types'
+import { Link } from '@inertiajs/vue3'
 
-const { authUser } = usePage<SharedProps>().props
-
-const handleLogout = async () => {
-  try {
-    await axios.post('/auth/logout') // Endpoint logout
-    window.location.reload() // Refresh page after logout
-  } catch (error) {
-    console.error('Failed to logout:', error)
-    alert('Failed to logout. Please try again.')
-  }
-}
+const page = usePage<{ isAuth: boolean; user: User }>()
+const isAuth = computed(() => page.props.isAuth)
+//const user = computed(() => page.props.user)
 </script>
 
 <template>
-  <div v-if="authUser" class="flex items-center space-x-4">
+  <div v-if="isAuth" class="flex items-center space-x-4">
     <!-- Search Button (visible only on small screens) -->
 
     <!-- Authenticated User Actions -->
     <!-- Create Post Button -->
-    <Link href="/post" class="btn btn-outline rounded-full btn-primary">
-    <BadgePlus class="stroke-primary" />
-    <span class="hidden  md:inline lg:inline xl:inline 2xl:inline">Create</span>
+    <Link href="/post" class="btn btn-outline rounded-full btn-primary flex items-center">
+      <BadgePlus class="lucide" />
+      <span>Create</span>
     </Link>
 
     <!-- User Dropdown -->
     <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="avatar">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
         <div class="w-12 rounded-full">
-          <img alt="profile picture" :src="authUser?.avatarUrl
-            " />
+          <img
+            alt="profile picture"
+            src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+          />
         </div>
       </div>
       <ul tabindex="0" class="menu dropdown-content bg-base-300 rounded-box w-64 shadow">
-        <li>
-          <Link :href="`/u/${authUser?.username}`" class="justify-between">Profile</Link>
-        </li>
-        <!-- <li><a>Settings</a></li> -->
-        <li><a @click="handleLogout">Logout</a></li>
+        <li><a class="justify-between">Profile</a></li>
+        <li><a>Settings</a></li>
+        <li><a @click="router.post('/auth/logout')">Logout</a></li>
       </ul>
     </div>
   </div>
   <!-- Authentication Modal for Non-Authenticated Users -->
-  <Link v-else class="btn btn-primary rounded-full" href="/auth/login">
-  Login
-  </Link>
+  <AuthModal v-else />
 </template>
+
+<style lang="postcss" scoped>
+.lucide {
+  @apply text-primary;
+}
+</style>

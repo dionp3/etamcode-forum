@@ -1,20 +1,27 @@
-import { ref, computed } from 'vue'
+import { reactive, computed, watch } from 'vue'
 
-type Theme = 'light' | 'dark'
-
-// Helper to determine if code is running on the client
-const isClient = typeof window !== 'undefined' && typeof document !== 'undefined'
-
-// Reactive theme state
-const theme = ref<Theme>(isClient ? (document.documentElement.getAttribute('data-theme') as Theme) || 'light' : 'light')
-
-// Computed property to manage dark theme
-export const isDarkTheme = computed({
-  get: () => theme.value === 'dark',
-  set: (value: boolean) => {
-    if (!isClient) return
-    theme.value = value ? 'dark' : 'light'
-    document.documentElement.setAttribute('data-theme', theme.value)
-    localStorage.setItem('theme', theme.value)
-  },
+// Initialize the reactive state for the theme
+const modalState = reactive({
+  theme: localStorage.getItem('theme') || 'light', // Load from localStorage or default to 'light'
 })
+
+// Computed property to determine if the theme is dark
+const isDarkTheme = computed(() => modalState.theme === 'dark')
+
+// Watch the theme and update localStorage and the HTML element immediately
+watch(
+  () => modalState.theme,
+  (newValue) => {
+    localStorage.setItem('theme', newValue) // Save theme in localStorage
+    document.documentElement.setAttribute('data-theme', newValue) // Set the HTML 'data-theme' attribute
+  },
+  { immediate: true } // Ensure this runs immediately when the component mounts
+)
+
+// Function to toggle the theme between dark and light
+const toggleTheme = () => {
+  modalState.theme = modalState.theme === 'dark' ? 'light' : 'dark' // Toggle between light and dark
+}
+
+// Export the reactive state and functions
+export { modalState, isDarkTheme, toggleTheme }

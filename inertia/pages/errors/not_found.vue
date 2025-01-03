@@ -1,16 +1,21 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ArrowLeft } from 'lucide-vue-next'
-const goBack = () => window.history.back()
+defineProps<{ error: any }>()
+
+function goBack() {
+  window.history.back()
+}
 </script>
-
 <template>
-  <ContentContainer>
-    <div class="title">Page not found</div>
+  <MainLayout>
+    <template #main-content>
+      <div class="card-title">Page not found</div>
+      <span>{{ error.message }}</span>
 
-    <span>This page does not exist.</span>
-        <a @click.prevent="goBack" class="btn btn-sm rounded-full btn-ghost">
-      <ArrowLeft/> Go Back
-    </a>
-
-  </ContentContainer>
+      <span>This page does not exist.</span>
+      <a @click.prevent="goBack" class="btn btn-sm rounded-full btn-ghost">
+        <ArrowLeft /> Go Back
+      </a>
+    </template>
+  </MainLayout>
 </template>

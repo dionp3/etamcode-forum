@@ -1,6 +1,5 @@
-import type User from '#models/user'
-import type Profile from '#models/profile'
-import type Post from '#models/post'
+import User from '#models/user'
+import Profile from '#models/profile'
 import { allowGuest, BasePolicy } from '@adonisjs/bouncer'
 import type { AuthorizerResponse } from '@adonisjs/bouncer/types'
 
@@ -77,7 +76,9 @@ export default class ProfilePolicy extends BasePolicy {
 
     if (targetProfile.user.isAdmin) return false
 
-    const isAlreadyBlocked = blockedProfiles.some((profile) => profile.userId === targetProfile.userId)
+    const isAlreadyBlocked = blockedProfiles.some(
+      (profile) => profile.userId === targetProfile.userId
+    )
 
     if (isAlreadyBlocked) {
       return false
@@ -92,26 +93,14 @@ export default class ProfilePolicy extends BasePolicy {
     }
 
     // return true
-    const isAlreadyBlocked = blockedProfiles.some((profile) => profile.userId === targetProfile.userId)
+    const isAlreadyBlocked = blockedProfiles.some(
+      (profile) => profile.userId === targetProfile.userId
+    )
 
     if (isAlreadyBlocked) {
       return true
     }
 
     return false
-  }
-
-  hidePost(user: User, targetPost: Post, blockedPosts: Post[]): AuthorizerResponse {
-    if (!user) return false
-    if (user.id === targetPost.posterId) return false
-    const alreadyHidden = blockedPosts.some((post) => post.id === targetPost.id)
-    return !alreadyHidden
-  }
-
-  unhidePost(user: User, targetPost: Post, blockedPosts: Post[]): AuthorizerResponse {
-    if (!user) return false
-    if (user.id === targetPost.posterId) return false
-    const alreadyHidden = blockedPosts.some((post) => post.id === targetPost.id)
-    return alreadyHidden
   }
 }

@@ -123,11 +123,11 @@ export default class CommentsController {
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.notFound({ message: 'Data not found', error: error })
-      }
-      if (error.messages) {
+      } else if (error.messages) {
         return response.unprocessableEntity({ message: 'Validation error', error: error })
+      } else {
+        return response.badRequest({ message: 'Bad request', error: error })
       }
-      return response.badRequest({ message: 'Bad request', error: error })
     }
   }
 
@@ -165,8 +165,9 @@ export default class CommentsController {
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.notFound({ message: 'Data not found', error: error })
+      } else {
+        return response.badRequest({ message: 'Bad request', error: error })
       }
-      return response.badRequest({ message: 'Bad request', error: error })
     }
   }
 
@@ -208,8 +209,9 @@ export default class CommentsController {
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.notFound({ message: 'Data not found', error: error })
+      } else {
+        return response.badRequest({ message: 'Bad request', error: error })
       }
-      return response.badRequest({ message: 'Bad request', error: error })
     }
   }
 }

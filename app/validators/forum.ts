@@ -2,11 +2,12 @@ import vine from '@vinejs/vine'
 
 export const createForumValidator = vine.compile(
   vine.object({
-    name: vine.string().alphaNumeric({ allowUnderscores: false, allowSpaces: false, allowDashes: true }),
+    name: vine
+      .string()
+      .alphaNumeric({ allowUnderscores: true, allowSpaces: false, allowDashes: false }),
     description: vine.string().optional(),
     isPostingRestricted: vine.boolean(),
-    visibility: vine.string().optional(),
-  }),
+  })
 )
 
 export const sortForumValidator = vine.compile(
@@ -19,11 +20,11 @@ export const sortForumValidator = vine.compile(
       ])
       .optional(),
     order: vine.enum(['asc', 'desc']).optional(),
-  }),
+  })
 )
 
 export const pictureValidator = vine.compile(
   vine.object({
     imageUrl: vine.file({ extnames: ['jpg', 'jpeg', 'png'], size: '2mb' }).nullable(),
-  }),
+  })
 )

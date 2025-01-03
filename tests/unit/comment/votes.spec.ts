@@ -84,7 +84,7 @@ test.group('Comment votes', (g) => {
 
     await comment.refresh()
     await comment.load('voters')
-    const vote = comment.voters.find((voter) => voter.userId === user.profile.userId)
+    let vote = comment.voters.find((voter) => voter.userId === user.profile.userId)
     assert.exists(vote)
     assert.equal(vote?.$extras.pivot_score, -1)
     assert.equal(vote?.$extras.pivot_post_id, comment.post.id)
@@ -103,9 +103,10 @@ test.group('Comment votes', (g) => {
 
     await comment.refresh()
     await comment.load('voters')
-    const vote = comment.voters.find((voter) => voter.userId === user.profile.userId)
+    let vote = comment.voters.find((voter) => voter.userId === user.profile.userId)
     assert.exists(vote)
     assert.equal(vote?.$extras.pivot_score, 1)
     assert.equal(vote?.$extras.pivot_post_id, comment.post.id)
   })
 })
+

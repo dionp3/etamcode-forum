@@ -7,9 +7,21 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
 
-      table.integer('post_id').unsigned().notNullable().references('id').inTable('posts').onDelete('CASCADE')
+      table
+        .integer('post_id')
+        .unsigned()
+        .notNullable()
+        .references('id')
+        .inTable('posts')
+        .onDelete('CASCADE')
 
-      table.integer('user_id').unsigned().notNullable().references('user_id').inTable('profiles').onDelete('CASCADE')
+      table
+        .integer('user_id')
+        .unsigned()
+        .notNullable()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
 
       table.string('reason').notNullable()
 

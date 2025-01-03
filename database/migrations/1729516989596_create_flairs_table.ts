@@ -6,7 +6,13 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-      table.integer('forum_id').unsigned().references('id').inTable('forums').notNullable().onDelete('CASCADE')
+      table
+        .integer('forum_id')
+        .unsigned()
+        .references('id')
+        .inTable('forums')
+        .notNullable()
+        .onDelete('CASCADE')
       table.string('name', 20).notNullable()
       table.string('color', 20).notNullable()
       table.timestamp('created_at')

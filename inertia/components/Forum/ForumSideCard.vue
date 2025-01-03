@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Star } from 'lucide-vue-next'
 import { Plus } from 'lucide-vue-next'
 import { usePage } from '@inertiajs/vue3'
-import type { SharedProps } from '@adonisjs/inertia/types'
 
-const { authUser } = usePage<SharedProps>().props
+const page = usePage()
+const isAuth = computed(() => page.props.isAuth)
 
 const forum = ref([
   {
@@ -34,16 +34,23 @@ const forum = ref([
 </script>
 
 <template>
-  <div class="p-2 border border-primary rounded-lg">
+  <div class="w-full p-2 border border-primary rounded-lg">
     <h2 class="font-bold text-xl">
-      {{ authUser ? 'Communities' : 'Popular Communities' }}
+      {{ isAuth ? 'Communities' : 'Popular Communities' }}
     </h2>
     <div class="flex flex-col gap-4 mt-4">
-      <div v-for="(item, index) in forum" :key="index"
-        class="flex gap-4 items-center w-full h-fit p-2 rounded-lg hover:bg-neutral hover:text-neutral-content hover:cursor-pointer">
+      <div
+        v-for="(item, index) in forum"
+        :key="index"
+        class="flex gap-4 items-center w-full h-fit p-2 rounded-lg hover:bg-neutral hover:text-neutral-content hover:cursor-pointer"
+      >
         <div class="w-12 aspect-square">
-          <img v-if="item.Image !== null" :src="item.Image" alt="Forum Image"
-            class="w-full h-full object-cover rounded-lg" />
+          <img
+            v-if="item.Image !== null"
+            :src="item.Image"
+            alt="Forum Image"
+            class="w-full h-full object-cover rounded-lg"
+          />
           <div v-else class="bg-gray-500 w-full h-full flex items-center justify-center rounded-lg">
             32 x 32
           </div>
@@ -51,16 +58,16 @@ const forum = ref([
         <div class="flex flex-col justify-center w-fit h-fit">
           <p v-if="item.name == null" class="text-lg font-semibold">Forum's Name</p>
           <p v-else class="text-lg font-semibold">{{ item.name }}</p>
-          <div v-show="!authUser">
+          <div v-show="!isAuth">
             <p v-if="item.members == null" class="whitespace-nowrap">Forum's Members</p>
             <p v-else class="whitespace-nowrap">{{ item.members }}</p>
           </div>
         </div>
-        <div v-show="authUser" class="ml-auto flex place-content-end">
+        <div v-show="isAuth" class="ml-auto flex place-content-end">
           <Star />
         </div>
       </div>
-      <div v-if="!authUser" class="text-sm font-medium text-secondary hover:cursor-pointer">
+      <div v-if="!isAuth" class="text-sm font-medium text-secondary hover:cursor-pointer">
         show more
       </div>
       <div v-else class="btn btn-ghost flex flex-row gap-4 hover:cursor-pointer">

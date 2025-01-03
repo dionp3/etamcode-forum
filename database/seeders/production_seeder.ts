@@ -35,6 +35,9 @@ export default class ProductionSeeder extends BaseSeeder {
     })
 
     await admin.profile.merge({ displayName: 'Faiz Ahnaf', bio: "Site's admin" }).save()
-    await forumMod1.profile.merge({ displayName: 'Rionando Ronaldo', bio: 'Upcoming rapper in town' }).save()
+    await forumMod1.profile
+      .merge({ displayName: 'Rionando Ronaldo', bio: 'Upcoming rapper in town' })
+      .save()
   }
 }
+

@@ -2,7 +2,7 @@ import Forum from '#models/forum'
 import Post from '#models/post'
 import Profile from '#models/profile'
 import { FirebaseStorageService } from '#services/firebase_storage_service'
-import { pictureValidator, postValidator } from '#validators/post'
+import { pictureValidator, storePostValidator } from '#validators/post'
 import { errors } from '@adonisjs/core'
 import { Exception } from '@adonisjs/core/exceptions'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -43,7 +43,7 @@ export default class PostsController {
   async store({ request, response, auth }: HttpContext) {
     const profile = await Profile.findByOrFail('userId', auth.user?.id)
 
-    const payload = await request.validateUsing(postValidator)
+    const payload = await request.validateUsing(storePostValidator)
     const file = await request.validateUsing(pictureValidator)
 
     const firebaseStorage = new FirebaseStorageService()
@@ -169,7 +169,7 @@ export default class PostsController {
    */
   async update({ bouncer, params, request, response, inertia }: HttpContext) {
     try {
-      const payload = await request.validateUsing(postValidator)
+      const payload = await request.validateUsing(storePostValidator)
       const forum = await Forum.query()
         .where('name', params.name)
         .preload('moderators', (mods) => mods.orderBy('pivot_created_at', 'asc'))
@@ -180,7 +180,10 @@ export default class PostsController {
           message: 'You cannot edit this post because the forum is restricted',
         })
       }
-      const post = await Post.query().where('forumId', forum.id).andWhere('slug', params.slug).firstOrFail()
+      const post = await Post.query()
+        .where('forumId', forum.id)
+        .andWhere('slug', params.slug)
+        .firstOrFail()
       if (await bouncer.with('PostPolicy').denies('edit', post)) {
         return response.forbidden({ message: 'You are not allowed to edit this post' })
       }
@@ -216,7 +219,10 @@ export default class PostsController {
           message: 'You cannot delete this post because the forum is restricted',
         })
       }
-      const post = await Post.query().where('forumId', forum.id).andWhere('slug', params.slug).firstOrFail()
+      const post = await Post.query()
+        .where('forumId', forum.id)
+        .andWhere('slug', params.slug)
+        .firstOrFail()
       if (await bouncer.with('PostPolicy').denies('delete', post)) {
         return response.forbidden({ message: 'You are not allowed to delete this post' })
       }
@@ -252,7 +258,7 @@ export default class PostsController {
 
         const { reason } = request.body()
 
-        const profile = await Profile.query().where('userId', auth?.user?.id).firstOrFail()
+        const profile = await Profile.query().where('userId', auth!.user!.id).firstOrFail()
         await Profile.reportPost(profile, post, reason)
 
         return response.ok({ message: 'Post has been reported', user: auth.user, post, forum })

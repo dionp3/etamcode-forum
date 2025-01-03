@@ -7,8 +7,20 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
       table.integer('parent_comment_id').nullable().references('id').inTable('comments')
-      table.integer('creator_id').unsigned().references('user_id').inTable('profiles').onDelete('CASCADE').notNullable()
-      table.integer('post_id').unsigned().references('id').inTable('posts').onDelete('CASCADE').notNullable()
+      table
+        .integer('creator_id')
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
+        .notNullable()
+      table
+        .integer('post_id')
+        .unsigned()
+        .references('id')
+        .inTable('posts')
+        .onDelete('CASCADE')
+        .notNullable()
       table.string('content', 500).notNullable()
       // table.ltree('path')
       table.string('slug', 100).nullable()

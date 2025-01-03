@@ -4,11 +4,12 @@ export const commentParamValidator = vine.compile(vine.object({ param: vine.numb
 export const createCommentValidator = vine.compile(
   vine.object({
     content: vine.string().ascii(),
-    parentCommentId: vine.number().nullable(),
-  }),
+    postId: vine.number().positive(),
+    creatorId: vine.number().positive(),
+  })
 )
 export const editCommentValidator = vine.compile(
   vine.object({
     content: vine.string().ascii(),
-  }),
+  })
 )

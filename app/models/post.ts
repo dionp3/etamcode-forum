@@ -1,23 +1,20 @@
-import string from '@adonisjs/core/helpers/string'
-import { BaseModel, afterCreate, afterUpdate, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
-import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import type { DateTime } from 'luxon'
-import Comment from '#models/comment'
-import Flair from '#models/flair'
-import Forum from '#models/forum'
-import Hashtag from '#models/hashtag'
+import {
+  BaseModel,
+  column,
+  belongsTo,
+  hasMany,
+  afterCreate,
+  afterUpdate,
+  manyToMany,
+} from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Profile from '#models/profile'
-
-type SerializedComment = {
-  id: number
-  slug: string
-  content: string
-  createdAt: string
-  displayName: string
-  username: string
-  avatarUrl: string
-  replies: SerializedComment[]
-}
+import Forum from '#models/forum'
+import Flair from '#models/flair'
+import Comment from '#models/comment'
+import string from '@adonisjs/core/helpers/string'
+import Hashtag from '#models/hashtag'
 
 export default class Post extends BaseModel {
   @column({ isPrimary: true })
@@ -34,16 +31,18 @@ export default class Post extends BaseModel {
   @column()
   declare forumId: number | null
 
-  @belongsTo(() => Forum, { foreignKey: 'forumId' })
+  @belongsTo(() => Forum, {
+    foreignKey: 'forumId',
+  })
   declare forum: BelongsTo<typeof Forum>
 
   @column()
   declare flairId: number | null
 
   @belongsTo(() => Flair)
-  declare flair: BelongsTo<typeof Flair>
+  declare flare: BelongsTo<typeof Flair>
 
-  @hasMany(() => Comment)
+  @hasMany(() => Comment, {})
   declare comments: HasMany<typeof Comment>
 
   @manyToMany(() => Profile, {
@@ -77,7 +76,7 @@ export default class Post extends BaseModel {
   declare title: string
 
   @column()
-  declare slug: string
+  declare slug: string | null
 
   @column()
   declare content: string | null
@@ -104,16 +103,6 @@ export default class Post extends BaseModel {
     pivotTimestamps: true,
   })
   declare reportedBy: ManyToMany<typeof Profile>
-
-  @manyToMany(() => Profile, {
-    pivotTable: 'post_hides',
-    localKey: 'id',
-    pivotForeignKey: 'post_id',
-    relatedKey: 'userId',
-    pivotRelatedForeignKey: 'user_id',
-    pivotTimestamps: true,
-  })
-  declare HiddenBy: ManyToMany<typeof Profile>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -146,7 +135,6 @@ export default class Post extends BaseModel {
   @afterCreate()
   @afterUpdate()
   static async get_hashtag(post: Post) {
-    if (!post.content) return
     const hashtags = post.content.split(' ').filter((word) => word.startsWith('#'))
     await post.related('hasHashtags').detach()
     hashtags.map(async (tag) => {
@@ -156,44 +144,29 @@ export default class Post extends BaseModel {
   }
 
   // New method to retrieve comments and build the comment tree
-  async getComments(): Promise<SerializedComment[]> {
+  async getComments() {
     const post = this as Post
-    const comments: Comment[] = await post
+    const comments = await post
       .related('comments')
       .query()
       .where('isDeleted', false)
-      .orderBy('createdAt', 'desc')
-      .preload('creator', (creatorQuery) =>
-        creatorQuery
-          .select('userId', 'avatarId', 'displayName')
-          .preload('user', (userQuery) => userQuery.select('username'))
-          .preload('avatar', (avatarQuery) => avatarQuery.select('url')),
-      )
+      .orderBy('createdAt', 'asc')
+      .preload('creator', (creatorQuery) => creatorQuery.preload('user'))
 
     return Post.buildCommentTree(comments)
   }
 
   // Comment tree building logic moved here from the Comment model
-  private static buildCommentTree(comments: Comment[]): SerializedComment[] {
-    const commentMap: Map<number, SerializedComment> = new Map()
-    const roots: SerializedComment[] = []
+  private static buildCommentTree(comments: Comment[]) {
+    const commentMap = new Map<number, any>()
+    const roots: any[] = []
 
     for (const comment of comments) {
-      commentMap.set(comment.id, {
-        id: comment.id,
-        slug: comment.slug,
-        content: comment.content,
-        createdAt: comment.createdAt.toString(),
-        displayName: comment.creator.displayName || comment.creator.user.username,
-        username: comment.creator.user.username,
-        avatarUrl: comment.creator.avatar.url,
-        replies: [],
-      } as SerializedComment)
+      commentMap.set(comment.id, { ...comment.serialize(), replies: [] })
     }
 
     for (const comment of comments) {
       const serializedComment = commentMap.get(comment.id)
-      if (!serializedComment) continue
       if (comment.parentCommentId) {
         const parentComment = commentMap.get(comment.parentCommentId)
         if (parentComment) {

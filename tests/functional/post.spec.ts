@@ -71,16 +71,21 @@ test.group('Post', (group) => {
       .preload('forum')
       .where('isRemoved', false)
       .firstOrFail()
-    const response = await client.get(`/api/f/${post.forum.name}/posts/${post.slug}`).loginAs(post.poster.user)
+    const response = await client
+      .get(`/api/f/${post.forum.name}/posts/${post.slug}`)
+      .loginAs(post.poster.user)
     assert.equal(response.status(), 200)
     assert.isObject(response.body().post)
   })
 
-  test('It returns 403 if non authorized user see a restricted post', async ({ assert, client }) => {
+  test('It returns 403 if non authorized user see a restricted post', async ({
+    assert,
+    client,
+  }) => {
     const posts = await Post.query()
       .where('isRemoved', true)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false),
+        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false)
       )
       .preload('forum')
 
@@ -102,18 +107,23 @@ test.group('Post', (group) => {
       .firstOrFail()
 
     // checks if status 200, the poster has same id as response body, teh response body is object
-    const response = await client.get(`/api/f/${post.forum.name}/posts/${post.slug}`).loginAs(post.poster.user)
+    const response = await client
+      .get(`/api/f/${post.forum.name}/posts/${post.slug}`)
+      .loginAs(post.poster.user)
     assert.equal(response.status(), 200)
     assert.isObject(response.body().post)
     assert.isNotNull(response.body().post)
     assert.equal(response.body().post.posterId, post.posterId)
   })
 
-  test('It returns 403 when user seeing non removed post but the forum is restricted', async ({ client, assert }) => {
+  test('It returns 403 when user seeing non removed post but the forum is restricted', async ({
+    client,
+    assert,
+  }) => {
     const posts = await Post.query()
       .where('isRemoved', false)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', true).andWhere('isDeleted', true).andWhere('isHidden', true),
+        forum.where('isRemoved', true).andWhere('isDeleted', true).andWhere('isHidden', true)
       )
       .preload('forum')
 
@@ -121,14 +131,17 @@ test.group('Post', (group) => {
     assert.equal(allAreNotRemoved, true)
     const response = await client.get(`/api/f/${posts[0].forum.name}/posts/${posts[0].slug}`)
     assert.equal(response.status(), 403)
-    assert.equal(response.body().message, 'You cannot see this post because the forum is restricted')
+    assert.equal(
+      response.body().message,
+      'You cannot see this post because the forum is restricted'
+    )
   })
 
   test("Unauthorized user cannot update other's post", async ({ client, assert }) => {
     const post = await Post.query()
       .where('isRemoved', false)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false),
+        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false)
       )
       .preload('forum')
       .preload('poster', (poster) => poster.preload('user'))
@@ -150,7 +163,7 @@ test.group('Post', (group) => {
     const post = await Post.query()
       .where('isRemoved', false)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false),
+        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false)
       )
       .preload('forum')
       .preload('poster', (poster) => poster.preload('user'))
@@ -174,7 +187,7 @@ test.group('Post', (group) => {
     const post = await Post.query()
       .where('isRemoved', false)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', true).andWhere('isDeleted', false).andWhere('isHidden', false),
+        forum.where('isRemoved', true).andWhere('isDeleted', false).andWhere('isHidden', false)
       )
       .preload('forum')
       .preload('poster', (poster) => poster.preload('user'))
@@ -188,7 +201,10 @@ test.group('Post', (group) => {
       .withCsrfToken()
     const updatedPost = await Post.findByOrFail('id', post.id)
     assert.equal(response.status(), 403)
-    assert.equal(response.body().message, 'You cannot edit this post because the forum is restricted')
+    assert.equal(
+      response.body().message,
+      'You cannot edit this post because the forum is restricted'
+    )
     assert.equal(post.title, updatedPost.title)
   })
 
@@ -196,7 +212,7 @@ test.group('Post', (group) => {
     const post = await Post.query()
       .where('isRemoved', false)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false),
+        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false)
       )
       .preload('forum')
       .preload('poster', (poster) => poster.preload('user'))
@@ -216,7 +232,7 @@ test.group('Post', (group) => {
     const post = await Post.query()
       .where('isRemoved', false)
       .whereHas('forum', (forum) =>
-        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false),
+        forum.where('isRemoved', false).andWhere('isDeleted', false).andWhere('isHidden', false)
       )
       .preload('forum')
       .preload('poster', (poster) => poster.preload('user'))
@@ -254,7 +270,10 @@ test.group('Post', (group) => {
       .withCsrfToken()
       .withInertia()
 
-    const report = await Profile.query().where('userId', user.id).preload('reportedPosts').firstOrFail()
+    const report = await Profile.query()
+      .where('userId', user.id)
+      .preload('reportedPosts')
+      .firstOrFail()
     const reportPost = report.reportedPosts
 
     assert.equal(response.status(), 200)
@@ -281,14 +300,20 @@ test.group('Post', (group) => {
 
     const userProfile = await Profile.findByOrFail('userId', user.id)
 
-    const profile = await Profile.query().where('userId', userProfile.userId).preload('reportedPosts').firstOrFail()
+    const profile = await Profile.query()
+      .where('userId', userProfile.userId)
+      .preload('reportedPosts')
+      .firstOrFail()
 
     const report = profile.reportedPosts[0]
 
     assert.isUndefined(report)
   })
 
-  test('Newly created post could has hashtags in the content and also in pivot table', async ({ client, assert }) => {
+  test('Newly created post could has hashtags in the content and also in pivot table', async ({
+    client,
+    assert,
+  }) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
 
     const forum = await Forum.query()

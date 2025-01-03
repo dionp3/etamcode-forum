@@ -1,8 +1,8 @@
-import type User from '#models/user'
-import type Comment from '#models/comment'
+import User from '#models/user'
+import Comment from '#models/comment'
 import { allowGuest, BasePolicy } from '@adonisjs/bouncer'
-import type { AuthorizerResponse } from '@adonisjs/bouncer/types'
-import type Post from '#models/post'
+import { AuthorizerResponse } from '@adonisjs/bouncer/types'
+import Post from '#models/post'
 
 export default class CommentPolicy extends BasePolicy {
   index(user: User) {
@@ -11,7 +11,9 @@ export default class CommentPolicy extends BasePolicy {
 
   @allowGuest()
   show(user: User | null, comment: Comment) {
-    return !comment.isRemoved || !comment.isDeleted || user?.id === comment.creatorId || user?.isAdmin
+    return (
+      !comment.isRemoved || !comment.isDeleted || user?.id === comment.creatorId || user?.isAdmin
+    )
   }
 
   edit(user: User, comment: Comment) {

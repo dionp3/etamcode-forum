@@ -1,7 +1,7 @@
 import TestSeeder from '#database/seeders/main/test_seeder'
 import StarterSeeder from '#database/seeders/starter_seeder'
 import Flair from '#models/flair'
-import type Forum from '#models/forum'
+import Forum from '#models/forum'
 import Profile from '#models/profile'
 import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
@@ -42,7 +42,11 @@ test.group('Flair', (group) => {
     // Check if the response contains the list of flairs
     const data = response.body()
     assert.isNotEmpty(data, 'Flair list is empty')
-    assert.equal(data.data[0].forumId, forumWithFlairs.id, 'Flairs do not belong to the correct forum')
+    assert.equal(
+      data.data[0].forumId,
+      forumWithFlairs.id,
+      'Flairs do not belong to the correct forum'
+    )
   })
 
   test('Authorized user can add flair to their forum', async ({ assert, client }) => {
@@ -50,7 +54,10 @@ test.group('Flair', (group) => {
     const moderatorId: number = moderators[0].profile_id
     const moderatorProfile = await Profile.findByOrFail('userId', moderatorId)
     await moderatorProfile.load('user')
-    const moderatedForum: Forum = await moderatorProfile.related('moderatedForums').query().firstOrFail()
+    const moderatedForum: Forum = await moderatorProfile
+      .related('moderatedForums')
+      .query()
+      .firstOrFail()
 
     const response = await client
       .post(`/api/forums/${moderatedForum.id}/flairs`)
@@ -68,7 +75,11 @@ test.group('Flair', (group) => {
     if (createdFlair) {
       assert.equal(createdFlair.name, 'Help', 'Created flair should have the correct name')
       assert.equal(createdFlair.color, '#FFFFFF', 'Created flair should have the correct color')
-      assert.equal(createdFlair.forumId, moderatedForum.id, 'Created flair should be associated with the correct forum')
+      assert.equal(
+        createdFlair.forumId,
+        moderatedForum.id,
+        'Created flair should be associated with the correct forum'
+      )
     }
   })
 
@@ -79,7 +90,10 @@ test.group('Flair', (group) => {
     const moderatorProfile = await Profile.findByOrFail('userId', moderatorId)
     // console.log(moderatorProfile)
     await moderatorProfile.load('user')
-    const moderatedForum: Forum = await moderatorProfile.related('moderatedForums').query().firstOrFail()
+    const moderatedForum: Forum = await moderatorProfile
+      .related('moderatedForums')
+      .query()
+      .firstOrFail()
     // console.log(moderatedForum)
     const forumFlairs = await moderatedForum.related('flairs').query()
     // console.log(forumFlairs)
@@ -107,7 +121,10 @@ test.group('Flair', (group) => {
     const moderatorProfile = await Profile.findByOrFail('userId', moderatorId)
     // console.log(moderatorProfile)
     await moderatorProfile.load('user')
-    const moderatedForum: Forum = await moderatorProfile.related('moderatedForums').query().firstOrFail()
+    const moderatedForum: Forum = await moderatorProfile
+      .related('moderatedForums')
+      .query()
+      .firstOrFail()
     // console.log(moderatedForum)
     const forumFlairs = await moderatedForum.related('flairs').query()
     // console.log(forumFlairs)

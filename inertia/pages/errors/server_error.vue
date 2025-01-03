@@ -1,16 +1,22 @@
 <script setup lang="ts">
+defineProps<{ error: any }>()
 import { ArrowLeft } from 'lucide-vue-next'
-defineProps<{ error: Error }>()
-const goBack = () => window.history.back()
+function goBack() {
+  window.history.back()
+}
 </script>
 
 <template>
-  <ContentContainer>
-    <div class="title">Server Error</div>
-    <span>{{error.message}}</span>
-        <a @click.prevent="goBack" class="btn btn-sm rounded-full btn-ghost">
-      <ArrowLeft /> Go Back
-    </a>
+  <MainLayout>
+    <template #main-content>
+      <pre>{{ error }}</pre>
+      <div class="card-title">Server Error</div>
 
-  </ContentContainer>
+      <span>{{ error.message }}</span>
+
+      <a @click.prevent="goBack" class="btn btn-sm rounded-full btn-ghost">
+        <ArrowLeft /> Go Back
+      </a>
+    </template>
+  </MainLayout>
 </template>

@@ -14,10 +14,15 @@ export default class ForumController {
 
     try {
       for (const forum of forums) {
-        const moderators = await forum.related('moderators').query().orderBy('pivot_created_at', 'asc')
-        await forum.load('icon')
+        const moderators = await forum
+          .related('moderators')
+          .query()
+          .orderBy('pivot_created_at', 'asc')
+        await forum.load('defaultIcon')
 
-        const canView = await bouncer.with('ForumPolicy').allows('show', moderators, moderators[0], forum)
+        const canView = await bouncer
+          .with('ForumPolicy')
+          .allows('show', moderators, moderators[0], forum)
         if (canView) {
           authorizedForums.push(forum)
         }
@@ -39,7 +44,10 @@ export default class ForumController {
   async show({ bouncer, params, inertia, response, auth }: HttpContext) {
     try {
       const forum = await Forum.findByOrFail('name', params.name)
-      const moderators = await forum.related('moderators').query().orderBy('pivot_created_at', 'asc')
+      const moderators = await forum
+        .related('moderators')
+        .query()
+        .orderBy('pivot_created_at', 'asc')
       if (await bouncer.with('ForumPolicy').denies('show', moderators, moderators[0], forum)) {
         return response.forbidden({ message: 'You cannot see detail of this forum' })
       }
@@ -51,7 +59,7 @@ export default class ForumController {
           posts.push(post)
         }
       }
-      await forum.load('icon')
+      await forum.load('defaultIcon')
       return response.json({ forum: forum, posts: posts })
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
@@ -80,7 +88,7 @@ export default class ForumController {
       } else {
         forum = await Forum.create({ ...payload })
       }
-      const userId = auth.user?.id
+      const userId = auth.user!.id
       const userProfile = await Profile.findByOrFail('userId', userId)
       await Forum.addModerator(forum, userProfile)
       return response.created({ message: 'Forum created', data: forum })
@@ -131,7 +139,11 @@ export default class ForumController {
   async destroy({ params, response, inertia, bouncer }: HttpContext) {
     try {
       const forum = await Forum.findByOrFail('name', params.name)
-      const forumCreator = await forum.related('moderators').query().orderBy('pivot_created_at', 'asc').firstOrFail()
+      const forumCreator = await forum
+        .related('moderators')
+        .query()
+        .orderBy('pivot_created_at', 'asc')
+        .firstOrFail()
       if (await bouncer.with('ForumPolicy').denies('destroy', forumCreator)) {
         return response.forbidden({ message: 'You cannot delete this forum' })
       }
@@ -156,7 +168,10 @@ export default class ForumController {
     if (request.method() === 'POST') {
       try {
         const currForum = await Forum.findByOrFail('name', params.name)
-        await currForum.load('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
+        await currForum.load(
+          'moderators',
+          async (mods) => await mods.orderBy('pivot_created_at', 'asc')
+        )
         const moderators = currForum.moderators
         const { targetUserId } = request.body()
         const targetProfile = await Profile.findByOrFail('userId', targetUserId)
@@ -184,7 +199,9 @@ export default class ForumController {
         .firstOrFail()
       const { currForumId, targetUserId } = request.body()
       const targetProfile = await Profile.findByOrFail('userId', targetUserId)
-      if (await bouncer.with('ForumPolicy').denies('removeModerator', targetProfile, forumCreator)) {
+      if (
+        await bouncer.with('ForumPolicy').denies('removeModerator', targetProfile, forumCreator)
+      ) {
         return response.forbidden({ message: 'You are not allowed to remove this moderator' })
       }
       await Forum.removeModerator(currForum, targetProfile)

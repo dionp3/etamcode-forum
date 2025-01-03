@@ -16,7 +16,11 @@ test.group('Profile Pivot', (group) => {
     await db.rollbackGlobalTransaction()
   })
   test('User can follow another user', async ({ assert, client }) => {
-    const user1 = await Profile.query().doesntHave('followings').preload('followings').preload('user').firstOrFail()
+    const user1 = await Profile.query()
+      .doesntHave('followings')
+      .preload('followings')
+      .preload('user')
+      .firstOrFail()
     const user2 = await Profile.query()
       .preload('user')
       .doesntHave('followers')
@@ -57,7 +61,11 @@ test.group('Profile Pivot', (group) => {
 
     const data = { currentUserId: user1.id, targetUserId: user1.id }
 
-    const response = await client.post(`/api/u/${user1.username}/follow`).form(data).loginAs(user1).withCsrfToken()
+    const response = await client
+      .post(`/api/u/${user1.username}/follow`)
+      .form(data)
+      .loginAs(user1)
+      .withCsrfToken()
 
     console.log(response.body())
     console.log(response.status())
@@ -107,7 +115,11 @@ test.group('Profile Pivot', (group) => {
   test('User cannot block themselves', async ({ assert, client }) => {
     const user1 = await User.findByOrFail('username', 'authorizeduser')
     const data = { currentUserId: user1.id, targetUserId: user1.id }
-    const response = await client.post(`/api/u/${user1.username}/block`).form(data).loginAs(user1).withCsrfToken()
+    const response = await client
+      .post(`/api/u/${user1.username}/block`)
+      .form(data)
+      .loginAs(user1)
+      .withCsrfToken()
     console.log(response.body())
     console.log(response.status())
     assert.equal(response.status(), 403)

@@ -5,8 +5,20 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.integer('post_id').references('id').inTable('posts').unsigned().notNullable().onDelete('CASCADE')
-      table.integer('profile_id').references('user_id').inTable('profiles').unsigned().notNullable().onDelete('CASCADE')
+      table
+        .integer('post_id')
+        .references('id')
+        .inTable('posts')
+        .unsigned()
+        .notNullable()
+        .onDelete('CASCADE')
+      table
+        .integer('profile_id')
+        .references('user_id')
+        .inTable('profiles')
+        .unsigned()
+        .notNullable()
+        .onDelete('CASCADE')
       table.integer('score')
       table.primary(['profile_id', 'post_id'])
       table.unique(['profile_id', 'post_id'])

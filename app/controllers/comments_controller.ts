@@ -3,7 +3,6 @@ import Forum from '#models/forum'
 import Post from '#models/post'
 import { createCommentValidator, editCommentValidator } from '#validators/comment'
 import type { HttpContext } from '@adonisjs/core/http'
-import filter from '#services/filter_bad_words'
 
 export default class CommentsController {
   /**
@@ -22,7 +21,7 @@ export default class CommentsController {
       let comments: Comment[]
       try {
         comments = await Comment.all()
-        comments.map(async (comment) => await comment.load('creator'))
+        await Promise.all(comments.map((comment) => comment.load('creator')))
       } catch (dataFetchError) {
         return response.internalServerError({
           message: 'Failed to load related data',
@@ -44,36 +43,30 @@ export default class CommentsController {
    * @responseBody 201 - {"message": "Comment posted", "data": <Comment>}
    */
   async store({ bouncer, request, response, auth, params }: HttpContext) {
-    // const payload = await createCommentValidator.validate(request.body())
-    if (!auth.user) return response.unauthorized({ message: 'You must be logged in to create a comment' })
-    const payload = await request.validateUsing(createCommentValidator)
-    payload.content = filter.clean(payload.content)
-    if (payload.parentCommentId) {
-      //const parentComment = await Comment.query().where('id', payload.parentCommentId?.toString()).firstOrFail()
-      //if (await bouncer.with('CommentPolicy').denies('reply', parentComment)) {
-      //  return response.forbidden({ message: 'You cannot reply to this comment' })
-      //}
-    }
-    const forum = await Forum.query()
-      .where('name', params.name)
-      .preload('moderators', (mods) => mods.orderBy('pivot_created_at', 'asc'))
-      .firstOrFail()
+    try {
+      // const payload = await createCommentValidator.validate(request.body())
+      const payload = await request.validateUsing(createCommentValidator)
+      const forum = await Forum.query()
+        .where('name', params.name)
+        .preload('moderators', (mods) => mods.orderBy('pivot_created_at', 'asc'))
+        .firstOrFail()
 
-    const moderators = forum.moderators
-    if (await bouncer.with('ForumPolicy').denies('show', moderators, moderators[0], forum)) {
-      return response.forbidden({ message: 'You cannot create a comment in this forum' })
+      const moderators = forum.moderators
+      if (await bouncer.with('ForumPolicy').denies('show', moderators, moderators[0], forum)) {
+        return response.forbidden({ message: 'You cannot create a comment in this forum' })
+      }
+      const post = await Post.query().where('slug', params.post_slug).firstOrFail()
+      if (await bouncer.with('PostPolicy').denies('show', post)) {
+        return response.forbidden({ message: 'You cannot create a comment in this post' })
+      }
+      const comment = await Comment.create(payload)
+      return response.created({ message: 'Comment posted', data: comment })
+    } catch (error) {
+      if (error.messages) {
+        return response.unprocessableEntity({ message: 'Validation error', error: error })
+      }
+      return response.badRequest({ message: 'Bad request', error: error.messages })
     }
-    const post = await Post.query().where('slug', params.post_slug).firstOrFail()
-    if (await bouncer.with('PostPolicy').denies('show', post)) {
-      return response.forbidden({ message: 'You cannot create a comment in this post' })
-    }
-    const comment = await Comment.create({
-      postId: post.id,
-      creatorId: auth.user.id,
-      content: payload.content,
-      parentCommentId: payload.parentCommentId,
-    })
-    return response.created({ message: 'Comment posted', data: comment })
   }
 
   /**
@@ -102,8 +95,6 @@ export default class CommentsController {
         .firstOrFail()
       const moderators = forum.moderators
 
-      payload.content = filter.clean(payload.content)
-
       if (await bouncer.with('ForumPolicy').denies('show', moderators, moderators[0], forum)) {
         return response.forbidden({
           message: 'You cannot edit this comment because the forum is restricted',
@@ -126,11 +117,11 @@ export default class CommentsController {
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.notFound({ message: 'Data not found', error: error })
-      }
-      if (error.messages) {
+      } else if (error.messages) {
         return response.unprocessableEntity({ message: 'Validation error', error: error })
+      } else {
+        return response.badRequest({ message: 'Bad request', error: error })
       }
-      return response.badRequest({ message: 'Bad request', error: error })
     }
   }
 
@@ -171,8 +162,9 @@ export default class CommentsController {
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.notFound({ message: 'Data not found', error: error })
+      } else {
+        return response.badRequest({ message: 'Bad request', error: error })
       }
-      return response.badRequest({ message: 'Bad request', error: error })
     }
   }
 }

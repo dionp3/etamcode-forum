@@ -1,23 +1,41 @@
-import string from '@adonisjs/core/helpers/string'
-import { BaseModel, afterCreate, beforeSave, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
-import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
-import type { DateTime } from 'luxon'
+import { DateTime } from 'luxon'
 import Avatar from '#models/avatar'
-import Flair from '#models/flair'
+import {
+  afterCreate,
+  afterSave,
+  BaseModel,
+  beforeSave,
+  belongsTo,
+  column,
+  hasMany,
+  manyToMany,
+} from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany, HasOne, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Post from '#models/post'
+import DefaultAvatar from '#models/default_avatar'
 import Profile from '#models/profile'
+import Flair from '#models/flair'
+import string from '@adonisjs/core/helpers/string'
 
 export default class Forum extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
   @column()
-  declare iconId: number
+  declare iconId: number | null
 
   @belongsTo(() => Avatar, {
     foreignKey: 'iconId',
   })
   declare icon: BelongsTo<typeof Avatar>
+
+  @column({ columnName: 'default_icon_id' })
+  declare defaultIconId: number
+
+  @belongsTo(() => DefaultAvatar, {
+    foreignKey: 'defaultIconId',
+  })
+  declare defaultIcon: BelongsTo<typeof DefaultAvatar>
 
   @hasMany(() => Post)
   declare posts: HasMany<typeof Post>
@@ -101,9 +119,10 @@ export default class Forum extends BaseModel {
 
   @afterCreate()
   static async assignIcon(forum: Forum) {
-    if (forum.iconId) return
-    const avatar = await Avatar.create({ url: `https://ui-avatars.com/api/?name=${forum.name}` })
-    forum.merge({ iconId: avatar.id }).save()
+    const randomIcon = await DefaultAvatar.query().orderByRaw('RANDOM()').first()
+    if (randomIcon) {
+      forum.merge({ defaultIconId: randomIcon.id }).save()
+    }
   }
 
   static async addModerator(forum: Forum, targetProfile: Profile): Promise<void> {

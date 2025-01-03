@@ -20,7 +20,11 @@ test.group('Forum followers', (group) => {
     await user.load('profile')
     const forums = await Forum.all()
     await Profile.followForum(user.profile, forums[0])
-    const addedFollower = await forums[0].related('followers').query().where('profile_id', user.id).first()
+    const addedFollower = await forums[0]
+      .related('followers')
+      .query()
+      .where('profile_id', user.id)
+      .first()
     assert.isNotNull(addedFollower)
   })
 })

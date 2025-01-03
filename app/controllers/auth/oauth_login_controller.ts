@@ -28,13 +28,10 @@ export default class OauthLoginController {
     }
 
     const { email, name, token } = await user.user()
+    console.log(email)
     let googleUser = await User.findBy('email', email)
     if (!googleUser) {
-      googleUser = await User.create({
-        email: email,
-        username: name.replace(/\s+/g, '_'),
-        password: 'admin1234',
-      })
+      googleUser = await User.create({ email: email, username: name, password: 'admin1234' })
     }
 
     await auth.use('web').login(googleUser)

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3'
-import { KeyRound, Mail } from 'lucide-vue-next'
-import { reactive } from 'vue'
-import VueTurnstile from 'vue-turnstile'
+import { Link } from '@inertiajs/vue3'
+import AuthLayout from '~/layouts/AuthLayout.vue'
+import { useForm, usePage } from '@inertiajs/vue3'
+import { Mail, KeyRound } from 'lucide-vue-next'
+import { formatErrors } from '../../components/NavBar/RightContent/AuthModal/formatErrors'
 import { z } from 'zod'
-import { formatErrors } from '~/utils/formatErrors'
+import { computed, reactive } from 'vue'
+import VueTurnstile from 'vue-turnstile'
 
-defineProps<{ turnstileSiteKey: string }>()
+const page = usePage()
+const turnstileSiteKey = computed(() => page.props.turnstileSiteKey as string)
+const errors = computed(() => page.props.errors as unknown as string)
 
 // Definisikan schema validasi Zod
 const loginSchema = z.object({
@@ -45,6 +49,8 @@ const handleSubmit = async () => {
     }
   }
 }
+
+defineOptions({ layout: AuthLayout })
 </script>
 
 <template>
@@ -93,40 +99,42 @@ const handleSubmit = async () => {
         </p>
 
         <vue-turnstile :site-key="turnstileSiteKey" v-model="form.turnstileToken" />
-        <!--
         <div v-if="errors === 'Captcha verification failed.'" class="text-sm text-red-400">
           {{ errors }}
         </div>
-        -->
         <!-- Submit Button -->
         <button
           type="submit"
           :disabled="form.processing"
-          class="btn btn-primary btn-block rounded-full"
+          class="btn btn-primary btn-block rounded-full w-full"
         >
           <span v-if="form.progress" class="loading loading-spinner loading-sm"></span>
           <span v-else>Login</span>
         </button>
+
+        <!-- Login with Google -->
+        <button
+          class="btn btn-outline btn-block rounded-full w-full flex items-center justify-center gap-2"
+        >
+          <img
+            class="w-6 h-6"
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            loading="lazy"
+            alt="google logo"
+          />
+          <a href="/auth/google/redirect" class="inline-block">
+            <span>Login with Google</span>
+          </a>
+        </button>
+
+        <!-- Register Link -->
+        <div class="text-center">
+          <p class="text-sm">
+            Don't have an account?
+            <Link href="/auth/register" class="text-primary font-bold">Register</Link>
+          </p>
+        </div>
       </form>
-      <!-- Login with Google -->
-      <button class="btn btn-outline btn-block rounded-full flex items-center justify-center gap-2">
-        <img
-          class="w-6 h-6"
-          src="https://www.svgrepo.com/show/475656/google-color.svg"
-          loading="lazy"
-          alt="google logo"
-        />
-        <a href="/auth/google/redirect" class="inline-block">
-          <span>Login with Google</span>
-        </a>
-      </button>
-      <!-- Register Link -->
-      <div class="text-center">
-        <p class="text-sm">
-          Don't have an account?
-          <Link href="/auth/register" class="text-primary font-bold">Register</Link>
-        </p>
-      </div>
     </div>
   </div>
 </template>

@@ -1,4 +1,4 @@
-export type User = {
+export interface User {
   id: number
   firebaseId: string | null
   username: string
@@ -8,9 +8,9 @@ export type User = {
   updatedAt: string
 }
 
-export type Profile = {
+export interface Profile {
   userId: number
-  displayName?: string | null
+  displayName: string | null
   bio: string | null
   isBanned: boolean
   isDeleted: boolean
@@ -18,32 +18,25 @@ export type Profile = {
   createdAt: string
   updatedAt: string
   user: User
-  avatarUrl: string
 }
 
-export type Flair = {
+export interface Post {
   id: number
-  name: string
-  color: string
-}
-
-export type Post = {
+  slug: string
+  posterId: number
+  forumId: number
   title: string
   content: string
-  imageUrl?: string
-  slug: string
-  displayName: string
-  username: string
-  forumName: string
-  avatarUrl: string
+  hasImage: boolean
+  imageUrl: string | null
+  isRemoved: boolean
+  isLocked: boolean
   createdAt: string
-  flair: Flair | null
-  totalComments?: string
-  totalScore?: string
-  // TODO: total scores, either downvote or upvote or score directly
+  updatedAt: string
+  poster: Profile
+  forum: Forum
 }
-
-export type Comment = {
+export interface Comment {
   id: number
   parentCommentId: number | null
   creatorId: number
@@ -58,7 +51,7 @@ export type Comment = {
   replies?: Comment[]
 }
 
-export type Forum = {
+export interface Forum {
   id: number
   iconId: number
   icon: Avatar
@@ -74,14 +67,14 @@ export type Forum = {
   updatedAt: string
 }
 
-export type Avatar = {
+export interface Avatar {
   id: number
   url: string
   created_at: string
   updated_at: string
 }
 
-export type PaginateMeta = {
+export interface PaginateMeta {
   total: number
   perPage: number
   currentPage: number

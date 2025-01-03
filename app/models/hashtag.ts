@@ -1,4 +1,4 @@
-import type { DateTime } from 'luxon'
+import { DateTime } from 'luxon'
 import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import { BaseModel, column, afterCreate, afterUpdate, manyToMany } from '@adonisjs/lucid/orm'
 import Post from '#models/post'

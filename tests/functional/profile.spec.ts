@@ -108,7 +108,10 @@ test.group('Profile', (group) => {
   test("Unauthorized user can't delete another profile", async ({ client, assert }) => {
     const authorizedUser = await User.findByOrFail('username', 'authorizeduser')
     const unauthorizedUser = await User.findByOrFail('username', 'unauthorizeduser')
-    const response = await client.delete(`/api/u/${authorizedUser.username}`).loginAs(unauthorizedUser).withCsrfToken()
+    const response = await client
+      .delete(`/api/u/${authorizedUser.username}`)
+      .loginAs(unauthorizedUser)
+      .withCsrfToken()
     assert.equal(response.status(), 403)
   })
 

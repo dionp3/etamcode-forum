@@ -1,39 +1,46 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { PostFactory } from '#database/factories/post_factory'
 import { ForumFactory } from '#database/factories/forum_factory'
+import { AvatarFactory } from '#database/factories/avatar_factory'
 import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
-import type Comment from '#models/comment'
+import { DefaultAvatarFactory } from '#factories/default_avatar_factory'
 import { CommentFactory } from '#factories/comment_factory'
+import Comment from '#models/comment'
 import { FlairFactory } from '#factories/flair_factory'
+import Flair from '#models/flair'
+import Post from '#models/post'
 import { FirestoreService } from '#services/firestore_service'
-import { AvatarFactory } from '#factories/avatar_factory'
 
 export default class StarterSeeder extends BaseSeeder {
-  public static environment: string[] = ['development', 'testing', 'production']
+  public static environment: string[] = ['development', 'testing']
   async run() {
     const firestoreService = new FirestoreService()
     await firestoreService.deleteAllUser()
 
     // Create 10 avatars
-    await AvatarFactory.createMany(5)
+    // await AvatarFactory.createMany(10)
+    await DefaultAvatarFactory.createMany(10)
 
-    const forums = await ForumFactory.createMany(10)
+    const forums = await ForumFactory.createMany(100)
+
     // // Create 20 users
-    const users = await UserFactory.createMany(25)
-    for (const user of users) {
-      await firestoreService.createUser({
-        username: user.username,
-        email: user.email,
-        password: user.password,
-      })
-    }
+    const users = await UserFactory.createMany(200)
+    users.forEach(
+      async (user) =>
+        await firestoreService.createUser({
+          username: user.username,
+          email: user.email,
+          password: user.password,
+        })
+    )
 
     // Create flairs that attached to random forums
     const flairs = await Promise.all(
       forums.map(
-        async (forum) => await FlairFactory.merge({ forumId: forum.id }).createMany(Math.floor(Math.random() * 4)),
-      ),
+        async (forum) =>
+          await FlairFactory.merge({ forumId: forum.id }).createMany(Math.floor(Math.random() * 4))
+      )
     )
 
     // // Load profiles for all users
@@ -45,7 +52,6 @@ export default class StarterSeeder extends BaseSeeder {
       email: 'admin@site.com',
       password: 'admin123',
       isAdmin: true,
-      isVerified: true,
     })
 
     const authorizedUser = await User.firstOrCreate({
@@ -53,7 +59,6 @@ export default class StarterSeeder extends BaseSeeder {
       email: 'authorized@gmail.com',
       password: 'password',
       isAdmin: false,
-      isVerified: true,
     })
 
     const unauthorizedUser = await User.firstOrCreate({
@@ -61,7 +66,6 @@ export default class StarterSeeder extends BaseSeeder {
       email: 'unauthorizeduser@gmail.com',
       password: 'password',
       isAdmin: false,
-      isVerified: true,
     })
 
     await firestoreService.createUser({
@@ -87,9 +91,13 @@ export default class StarterSeeder extends BaseSeeder {
     await unauthorizedUser.load('profile')
     await admin.load('profile')
 
-    await authorizedUser.profile.merge({ bio: "I'm an authorized user.", displayName: 'Authorized User' }).save()
+    await authorizedUser.profile
+      .merge({ bio: "I'm an authorized user.", displayName: 'Authorized User' })
+      .save()
 
-    await unauthorizedUser.profile.merge({ bio: "I'm an unauthorized user.", displayName: 'Unauthorized User' }).save()
+    await unauthorizedUser.profile
+      .merge({ bio: "I'm an unauthorized user.", displayName: 'Unauthorized User' })
+      .save()
 
     await admin.profile.merge({ bio: "I'm an admin.", displayName: 'Admin' }).save()
 
@@ -97,7 +105,7 @@ export default class StarterSeeder extends BaseSeeder {
     for (const forum of forums) {
       const randomUser = users[Math.floor(Math.random() * users.length)] // Randomly select a user
       const randomFlairs = flairs[forum.id] || []
-      const numberOfPosts = 20
+      const numberOfPosts = Math.floor(Math.random() * 10)
       const flairId =
         Math.random() > 0.5 && randomFlairs.length > 0
           ? randomFlairs[Math.floor(Math.random() * randomFlairs.length)].id
@@ -119,7 +127,7 @@ export default class StarterSeeder extends BaseSeeder {
             creatorId: randomUser.id,
             parentCommentId: null,
           }).create()
-        }),
+        })
       )
 
       // Create 0 to 5 replies for each top-level comment
@@ -129,7 +137,12 @@ export default class StarterSeeder extends BaseSeeder {
     }
   }
 
-  private async createReplies(parentComment: Comment, users: User[], currentDepth: number, maxDepth: number) {
+  private async createReplies(
+    parentComment: any,
+    users: User[],
+    currentDepth: number,
+    maxDepth: number
+  ) {
     if (currentDepth >= maxDepth) return
 
     const replyCount = Math.floor(Math.random() * 4) // 0 to 5 replies

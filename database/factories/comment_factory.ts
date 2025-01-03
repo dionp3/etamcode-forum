@@ -7,9 +7,9 @@ export const CommentFactory = factory
   .define(Comment, async ({ faker }) => {
     return {
       content: faker.lorem.sentences({ min: 2, max: 4 }),
-      isDeleted: faker.datatype.boolean(0.1),
-      isRead: faker.datatype.boolean(0.1),
-      isRemoved: faker.datatype.boolean(0.1),
+      isDeleted: faker.helpers.arrayElement([true, false]),
+      isRead: faker.helpers.arrayElement([true, false]),
+      isRemoved: faker.helpers.arrayElement([true, false]),
     }
   })
   .relation('creator', ProfileFactory)

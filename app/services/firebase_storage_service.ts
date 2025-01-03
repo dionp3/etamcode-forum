@@ -1,10 +1,10 @@
 import { storage } from '#config/firebase'
-import type User from '#models/user'
-import type { MultipartFile } from '@adonisjs/core/bodyparser'
+import User from '#models/user'
+import { MultipartFile } from '@adonisjs/core/bodyparser'
 import app from '@adonisjs/core/services/app'
-import { randomUUID } from 'node:crypto'
+import { randomUUID } from 'crypto'
 import { getDownloadURL } from 'firebase-admin/storage'
-import * as fs from 'node:fs/promises'
+import * as fs from 'fs/promises'
 
 export class FirebaseStorageService {
   private async uploadFile(file: MultipartFile, user: User, bucket: string): Promise<string> {

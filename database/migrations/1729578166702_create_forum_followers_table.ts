@@ -6,7 +6,12 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.integer('forum_id').unsigned().references('id').inTable('forums').onDelete('CASCADE')
-      table.integer('profile_id').unsigned().references('user_id').inTable('profiles').onDelete('CASCADE')
+      table
+        .integer('profile_id')
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
       table.boolean('is_pending').defaultTo(false).notNullable()
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })

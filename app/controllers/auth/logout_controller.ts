@@ -6,9 +6,9 @@ export default class LogoutController {
    * @summary Handles logout
    * @tag Auth
    */
-  async handle({ response, auth, inertia }: HttpContext) {
+  async handle({ response, auth }: HttpContext) {
     await auth.use('web').logout()
-    inertia.clearHistory()
+
     return response.redirect().toPath('/')
   }
 }

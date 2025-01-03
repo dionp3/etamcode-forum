@@ -1,17 +1,15 @@
-import { Exception } from '@adonisjs/core/exceptions'
-import type { HttpContext } from '@adonisjs/core/http'
-import db from '@adonisjs/lucid/services/db'
 import Avatar from '#models/avatar'
-import Comment from '#models/comment'
-import Forum from '#models/forum'
 import Post from '#models/post'
 import Profile from '#models/profile'
 import User from '#models/user'
-import filter from '#services/filter_bad_words'
+import Comment from '#models/comment'
 import { FirebaseStorageService } from '#services/firebase_storage_service'
 import { sortPostValidator } from '#validators/post'
 import { avatarValidator, updateProfileValidator } from '#validators/profile'
+import { Exception } from '@adonisjs/core/exceptions'
+import type { HttpContext } from '@adonisjs/core/http'
 import { voteCommentValidator } from '#validators/vote'
+import Forum from '#models/forum'
 
 export default class ProfilesController {
   /**
@@ -21,7 +19,7 @@ export default class ProfilesController {
    * @responseBody 200 - <User[]>.with(profile)
    * @responseBody 403 - {"error": "You are not allowed to see list of profiles"}
    */
-  async index({ bouncer, inertia }: HttpContext) {
+  async index({ bouncer, inertia, response }: HttpContext) {
     // Query all user with their own profile
     const users = await User.query().preload('profile')
 
@@ -44,7 +42,7 @@ export default class ProfilesController {
    * @paramPath username - The username of the user - @type(string) @required
    * @responseBody 200 - <Profile>.with(aggregate)
    */
-  async show({ bouncer, params, request, inertia, auth }: HttpContext) {
+  async show({ bouncer, params, request, inertia, response, auth }: HttpContext) {
     const page = request.input('page', 1)
     const perPage = request.input('per_page', 20)
     const { sort_by, order } = await request.validateUsing(sortPostValidator)
@@ -54,80 +52,40 @@ export default class ProfilesController {
       .whereHas('user', (query) => {
         query.where('username', params.username)
       })
+      .preload('user') // Preload the associated user
+      .preload('avatar')
       .firstOrFail()
-    if (!(await bouncer.with('ProfilePolicy').allows('show', profile)))
-      throw new Exception('You are not allowed to see this profile', { status: 403 })
-
-    const getProfile = async () => {
-      await profile.load('user') // Preload the associated user
-      await profile.load('avatar')
-      await profile.load('followers')
-      return profile
-    }
-
-    const followers = await db
-      .from('profile_followers')
-      .select('follower_id')
-      .where('following_id', profile.userId)
-      .catch(() => [])
-
-    const isFollower = followers.some((follower) => follower.follower_id === auth.user?.id)
-
-    // const followers = await profile.related('followers').query()
-
-    // (followers)
-
-    // const isFollower = followers.some((follower) => follower.userId === auth.user?.id)
 
     const postsQuery = await profile
       .related('posts')
       .query()
-      .select('id', 'title', 'content', 'forumId', 'slug', 'imageUrl', 'createdAt', 'isRemoved')
-      .where('isRemoved', false)
-      .withCount('comments', (commentsQuery) => commentsQuery.where('isRemoved', false))
-      .withCount('voters')
-      .preload('forum', (forumQuery) =>
-        forumQuery.select('name', 'iconId').preload('icon', (iconQuery) => iconQuery.select('url')),
-      )
-      .orderBy(sort_by || 'createdAt', order || 'desc')
+      .preload('forum')
+      .orderBy(sort_by || 'poster_id', order || 'asc')
       .paginate(page, perPage)
 
-    const getPosts = async () =>
+    const authorizedPosts = (
       await Promise.all(
         postsQuery.map(async (post) => {
-          if (!(await bouncer.with('PostPolicy').allows('view', post))) return null
-          const userVoteScore = auth.user
-            ? await db
-                .from('post_likes')
-                .select('score')
-                .where('post_id', post.id)
-                .andWhere('profile_id', auth.user.id)
-                .first()
-                .then((vote) => (vote ? vote.score : 0))
-                .catch(() => 0)
-            : 0
-          return {
-            title: post.title,
-            content: post.content,
-            imageUrl: post.imageUrl,
-            slug: post.slug,
-            forumName: post.forum.name,
-            avatarUrl: post.forum.icon.url,
-            createdAt: post.createdAt.toString(),
-            totalScore: post.$extras.voters_count,
-            totalComments: post.$extras.comments_count,
-            flair: post.flair,
-            userVoteScore,
-          }
-        }),
-      ).then((posts) => posts.filter((post) => post !== null))
+          const canView = await bouncer.with('PostPolicy').allows('view', post)
+          return canView ? post : null
+        })
+      )
+    ).filter(Boolean) // Filter out any `null` or `undefined` values
 
-    return inertia.render('profile/show', {
-      profile: await getProfile(),
-      posts: inertia.defer(getPosts).merge(),
-      isFollower,
-      paginate: postsQuery.getMeta(),
-    })
+    if (await bouncer.with('ProfilePolicy').denies('show', profile)) {
+      throw new Exception('You are not allowed to see list of profiles', {
+        status: 403,
+        code: 'E_FORBIDDEN_ACCESS',
+      })
+    }
+
+    if (await bouncer.with('ProfilePolicy').allows('show', profile)) {
+      return inertia.render('profile/show', {
+        profile,
+        paginate: postsQuery.getMeta(),
+        posts: authorizedPosts,
+      })
+    }
   }
 
   /**
@@ -136,43 +94,36 @@ export default class ProfilesController {
    * @tag Users/Profiles
    * @responseBody 200 - <Profile>.exclude(created_at, updated_at)
    */
-  async edit({ bouncer, response, inertia, auth }: HttpContext) {
-    const user = auth.user
-    if (!user) return response.unauthorized({ message: 'You must be logged in to edit a profile' })
-
-    await user.load('profile', (profileQuery) => profileQuery.preload('avatar'))
-
-    if (await bouncer.with('ProfilePolicy').denies('edit', user.profile)) {
-      return response.redirect().toPath(`/u/${user.username}`)
+  async edit({ bouncer, response, params, inertia }: HttpContext) {
+    const user = await User.findByOrFail('username', params.username)
+    await user.load('profile')
+    try {
+      if (await bouncer.with('ProfilePolicy').denies('edit', user.profile)) {
+        return response.forbidden({ message: 'You cannot edit this profile' })
+      }
+      return inertia.render('profile/edit', { user: user, profile: user.profile })
+    } catch (error) {
+      return response.badRequest({ message: 'Bad request', error: error })
     }
-    return inertia.render('profile/edit', {
-      user: user,
-      profile: user.profile,
-      avatarUrl: user.profile.avatar?.url,
-    })
   }
 
   /**
    * @update
    * @summary Update user's profile
    * @tag Users/Profiles
-   * @requestBody <Profile>.exclude(created_at, updated_at)
+   * @requestBody {"displayName":"Lorem", "bio":"Lorem"}
    * @responseBody 201 - {"message": "Profile updated", "profile": <User>.with(profile)}
    */
   async update({ bouncer, params, request, response, auth }: HttpContext) {
     try {
       const payload = await request.validateUsing(updateProfileValidator)
       const file = await request.validateUsing(avatarValidator)
-      const displayName = payload.displayName ? filter.clean(payload.displayName) : null
-      payload.bio = filter.clean(payload.bio)
 
-      if (displayName?.includes('·')) {
-        console.log('curse word detected')
-        return response.redirect().toPath(`/u/${auth.user?.username}/edit`)
-      }
+      const user = await User.query()
+        .where('username', params.username)
+        .preload('profile')
+        .firstOrFail()
 
-      const user = await User.query().where('username', params.username).preload('profile').firstOrFail()
-      console.log(payload)
       if (await bouncer.with('ProfilePolicy').denies('edit', user.profile)) {
         return response.forbidden({ message: 'You cannot edit this profile' })
       }
@@ -188,7 +139,6 @@ export default class ProfilesController {
       if (avatar) {
         user.profile.merge({
           ...payload,
-          displayName,
           avatarId: avatar.id,
         })
       } else {
@@ -197,12 +147,10 @@ export default class ProfilesController {
 
       await user.profile.save()
 
-      return response.redirect().toPath(`/u/${user.username}`)
-
-      //   return response.ok({
-      //     message: 'User profile updated',
-      //     profile: user.profile,
-      //   })
+      return response.ok({
+        message: 'User profile updated',
+        profile: user.profile,
+      })
     } catch (error) {
       console.error('Profile update error:', error)
 
@@ -242,16 +190,14 @@ export default class ProfilesController {
    * @requestBody {"userId": 1, "postSlug": "string"}
    * @responseBody 200 - {"message": "Post upvoted"}
    */
-  async upvotePost({ response, request, bouncer, auth }: HttpContext) {
-    const { postSlug } = request.body()
-    const profile = await Profile.findByOrFail('userId', auth.user?.id)
-
-    // const user = await User.query().where('id', userId).preload('profile').firstOrFail()
+  async upvotePost({ response, request, bouncer }: HttpContext) {
+    const { userId, postSlug } = request.body()
+    const user = await User.query().where('id', userId).preload('profile').firstOrFail()
     const post = await Post.query().where('slug', postSlug).firstOrFail()
     if (await bouncer.with('PostPolicy').denies('vote', post)) {
       return response.forbidden({ message: "Can't upvote this post" })
     }
-    await Profile.upvotePost(profile, post)
+    await Profile.upvotePost(user.profile, post)
     return response.ok({ message: 'Post upvoted' })
   }
 
@@ -262,14 +208,14 @@ export default class ProfilesController {
    * @requestBody {"userId": 1, "postSlug": "string"}
    * @responseBody 200 - {"message": "Post downvoted"}
    */
-  async downvotePost({ response, request, bouncer, auth }: HttpContext) {
-    const { postSlug } = request.body()
-    const profile = await Profile.findByOrFail('userId', auth.user?.id)
+  async downvotePost({ response, request, bouncer }: HttpContext) {
+    const { userId, postSlug } = request.body()
+    const user = await User.query().where('id', userId).preload('profile').firstOrFail()
     const post = await Post.query().where('slug', postSlug).firstOrFail()
     if (await bouncer.with('PostPolicy').denies('vote', post)) {
       return response.forbidden({ message: "Can't downvote this post" })
     }
-    await Profile.downvotePost(profile, post)
+    await Profile.downvotePost(user.profile, post)
     return response.ok({ message: 'Post downvoted' })
   }
 
@@ -280,15 +226,14 @@ export default class ProfilesController {
    * @requestBody {"userId": 1, "commentSlug": "string"}
    * @responseBody 200 - {"message": "Comment upvoted"}
    */
-  async upvoteComment({ response, request, bouncer, auth, params }: HttpContext) {
-    const { commentSlug } = await request.validateUsing(voteCommentValidator)
-    const profile = await Profile.findByOrFail('userId', auth.user?.id)
+  async upvoteComment({ response, request, bouncer }: HttpContext) {
+    const { userId, commentSlug } = await request.validateUsing(voteCommentValidator)
+    const user = await User.query().where('id', userId).preload('profile').firstOrFail()
     const comment = await Comment.query().where('slug', commentSlug).preload('post').firstOrFail()
-    const post = await Post.findByOrFail('slug', params.post_slug)
-    if (await bouncer.with('CommentPolicy').denies('vote', post, comment)) {
+    if (await bouncer.with('CommentPolicy').denies('vote', comment.post, comment)) {
       return response.forbidden({ message: "Can't upvote this comment" })
     }
-    await Profile.upvoteComment(profile, post, comment)
+    await Profile.upvoteComment(user.profile, comment.post, comment)
     return response.ok({ message: 'Comment upvoted' })
   }
 
@@ -299,15 +244,14 @@ export default class ProfilesController {
    * @requestBody {"userId": 1, "commentSlug": "string"}
    * @responseBody 200 - {"message": "Comment downvoted"}
    */
-  async downvoteComment({ response, request, bouncer, auth, params }: HttpContext) {
-    const { commentSlug } = await request.validateUsing(voteCommentValidator)
-    const profile = await Profile.findByOrFail('userId', auth.user?.id)
+  async downvoteComment({ response, request, bouncer }: HttpContext) {
+    const { userId, commentSlug } = await request.validateUsing(voteCommentValidator)
+    const user = await User.query().where('id', userId).preload('profile').firstOrFail()
     const comment = await Comment.query().where('slug', commentSlug).preload('post').firstOrFail()
-    const post = await Post.findByOrFail('slug', params.post_slug)
-    if (await bouncer.with('CommentPolicy').denies('vote', post, comment)) {
+    if (await bouncer.with('CommentPolicy').denies('vote', comment.post, comment)) {
       return response.forbidden({ message: "Can't downvote this comment" })
     }
-    await Profile.downvoteComment(profile, post, comment)
+    await Profile.downvoteComment(user.profile, comment.post, comment)
     return response.ok({ message: 'Comment downvoted' })
   }
 
@@ -322,10 +266,10 @@ export default class ProfilesController {
    * @responseBody 422 - {message: 'Validation error', error: object}
    * @responseBody 500 - {message: 'Internal server error', error: object}
    */
-  async followForum({ bouncer, request, response, auth }: HttpContext) {
+  async followForum({ bouncer, params, request, response }: HttpContext) {
     try {
-      const { forumTargetId } = request.body()
-      const userProfile = await Profile.findByOrFail('userId', auth.user?.id)
+      const { currUserId, forumTargetId } = request.body()
+      const userProfile = await Profile.findByOrFail('userId', currUserId)
       const targetForum = await Forum.findByOrFail('id', forumTargetId)
       const forumFollowers = await targetForum.related('followers').query()
       if (await bouncer.with('ProfilePolicy').denies('followForum', forumFollowers)) {
@@ -354,10 +298,10 @@ export default class ProfilesController {
    * @responseBody 422 - {message: 'Validation error', error: object}
    * @responseBody 500 - {message: 'Internal server error', error: object}
    */
-  async unfollowForum({ bouncer, request, response, auth }: HttpContext) {
+  async unfollowForum({ bouncer, params, request, response }: HttpContext) {
     try {
-      const { forumTargetId } = request.body()
-      const userProfile = await Profile.findByOrFail('userId', auth.user?.id)
+      const { currUserId, forumTargetId } = request.body()
+      const userProfile = await Profile.findByOrFail('userId', currUserId)
       const targetForum = await Forum.findByOrFail('id', forumTargetId)
       const forumFollowers = await targetForum.related('followers').query()
       if (await bouncer.with('ProfilePolicy').denies('unfollowForum', forumFollowers)) {
@@ -386,7 +330,7 @@ export default class ProfilesController {
    * @responseBody 422 - {message: 'Validation error', error: object}
    * @responseBody 500 - {message: 'Bad request', error: error}
    */
-  async blockForum({ bouncer, request, response }: HttpContext) {
+  async blockForum({ bouncer, params, request, response }: HttpContext) {
     try {
       const { currUserId, forumTargetId } = request.body()
       const userProfile = await Profile.findByOrFail('userId', currUserId)
@@ -419,7 +363,7 @@ export default class ProfilesController {
    * @responseBody 422 - {message: 'Validation error', error: object}
    * @responseBody 500 - {message: 'Bad request', error: error}
    */
-  async unblockForum({ bouncer, request, response }: HttpContext) {
+  async unblockForum({ bouncer, params, request, response }: HttpContext) {
     try {
       const { currUserId, forumTargetId } = request.body()
       const userProfile = await Profile.findByOrFail('userId', currUserId)
@@ -450,7 +394,7 @@ export default class ProfilesController {
    * @requestBody {"currentUserId": 1, "targetUserId": 1}
    * @responseBody 200 - {"message": "Sucessfully following this profile"}
    */
-  async followProfile({ response, request, params, bouncer, auth }: HttpContext) {
+  async followProfile({ response, request, params, bouncer }: HttpContext) {
     try {
       if (request.method() === 'GET') {
         const profile = await Profile.findByOrFail('userId', params.id)
@@ -458,9 +402,10 @@ export default class ProfilesController {
         return response.json({ followers })
       }
       if (request.method() === 'POST') {
-        const { targetUserId } = request.body()
+        console.log(request.body())
+        const { currentUserId, targetUserId } = request.body()
         const targetProfile = await Profile.findByOrFail('userId', targetUserId)
-        const currentProfile = await Profile.findByOrFail('userId', auth.user?.id)
+        const currentProfile = await Profile.findByOrFail('userId', currentUserId)
         const followings = await currentProfile.related('followings').query()
 
         if (await bouncer.with('ProfilePolicy').denies('followUser', targetProfile, followings)) {
@@ -481,12 +426,12 @@ export default class ProfilesController {
    * @requestBody {"currentUserId": 1, "targetUserId": 1}
    * @responseBody 200 - {"message": "User unfollowed"}
    */
-  async unfollowProfile({ response, request, bouncer, auth }: HttpContext) {
+  async unfollowProfile({ response, request, bouncer }: HttpContext) {
     try {
       if (request.method() === 'POST') {
-        const { targetUserId } = request.body()
+        const { currentUserId, targetUserId } = request.body()
         const targetProfile = await Profile.findByOrFail('userId', targetUserId)
-        const currentProfile = await Profile.findByOrFail('userId', auth.user?.id)
+        const currentProfile = await Profile.findByOrFail('userId', currentUserId)
         const followings = await currentProfile.related('followings').query()
 
         if (await bouncer.with('ProfilePolicy').denies('unfollow', targetProfile, followings)) {
@@ -556,76 +501,5 @@ export default class ProfilesController {
     } catch (error) {
       return response.badRequest({ message: 'Bad Request', error })
     }
-  }
-
-  async hidePost({ bouncer, response, params, auth }: HttpContext) {
-    const user = auth.user
-    if (!user) {
-      return response.unauthorized({ message: 'You must be logged in to hide a post' })
-    }
-    const forum = await Forum.query()
-      .where('name', params.name)
-      .preload('moderators', (mods) => mods.orderBy('pivot_created_at', 'asc'))
-      .preload('posts')
-      .firstOrFail()
-    const moderators = forum.moderators
-
-    if (await bouncer.with('ForumPolicy').denies('show', moderators, moderators[0], forum)) {
-      return response.forbidden({
-        message: 'You cannot hide this post because the forum is restricted',
-      })
-    }
-
-    const post = await Post.query().where('slug', params.post_slug).firstOrFail()
-    if (await bouncer.with('PostPolicy').denies('show', post)) {
-      return response.forbidden({ message: 'You are not allowed to hide this post' })
-    }
-
-    const profile = await Profile.query().where('userId', user.id).firstOrFail()
-    const hiddenPosts = await profile.related('postHide').query()
-
-    if (await bouncer.with('ProfilePolicy').denies('hidePost', post, hiddenPosts)) {
-      return response.forbidden({ message: 'You are not allowed to hide this post' })
-    }
-
-    await Profile.hidePost(profile, post)
-
-    return response.ok({ message: 'Post hidden', user: auth.user, post, forum })
-  }
-
-  async unhidePost({ bouncer, response, params, auth }: HttpContext) {
-    const user = auth.user
-    if (!user) {
-      return response.unauthorized({ message: 'You must be logged in to unhide a post' })
-    }
-    const forum = await Forum.query()
-      .where('name', params.name)
-      .preload('moderators', (mods) => mods.orderBy('pivot_created_at', 'asc'))
-      .preload('posts')
-      .firstOrFail()
-    const moderators = forum.moderators
-
-    if (await bouncer.with('ForumPolicy').denies('show', moderators, moderators[0], forum)) {
-      return response.forbidden({
-        message: 'You cannot umhide this post because the forum is restricted',
-      })
-    }
-
-    const post = await Post.query().where('slug', params.post_slug).firstOrFail()
-    if (await bouncer.with('PostPolicy').denies('show', post)) {
-      return response.forbidden({ message: 'You are not allowed to umhide this post' })
-    }
-
-    const profile = await Profile.query().where('userId', user.id).firstOrFail()
-    const hiddenPosts = await profile.related('postHide').query()
-
-    if (await bouncer.with('ProfilePolicy').denies('unhidePost', post, hiddenPosts)) {
-      return response.forbidden({ message: 'You are not allowed to umhide this post' })
-    }
-
-    await Profile.unhidePost(profile, post)
-
-    // TODO : Redirect ke halaman (tapi aku gatau redirect kemana)
-    return response.ok({ message: 'Post unhidden', user: auth.user, post, forum })
   }
 }

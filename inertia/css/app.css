@@ -35,18 +35,3 @@ html {
 .markdown-body {
   @apply prose;
 }
-
-.spoiler {
-  background-color: #444; /* Dark background for spoilers */
-  color: transparent;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.spoiler.active {
-  color: inherit; /* Reveal text when active */
-}
-
-.spoiler slot {
-  display: inline; /* Ensure content is inline */
-}

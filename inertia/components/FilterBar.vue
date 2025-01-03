@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Star, Flame, TrendingUp, Megaphone, Layout } from 'lucide-vue-next'
+import { Link } from '@inertiajs/vue3'
 </script>
 
 <template>
@@ -7,26 +8,26 @@ import { Star, Flame, TrendingUp, Megaphone, Layout } from 'lucide-vue-next'
     <ul class="menu lg:menu-horizontal text-sm">
       <li>
         <Link href="">
-        <Star />
-        Best
+          <Star />
+          Best
         </Link>
       </li>
       <li>
         <Link href="">
-        <Flame />
-        Hot
+          <Flame />
+          Hot
         </Link>
       </li>
       <li>
         <Link href="">
-        <Megaphone />
-        New
+          <Megaphone />
+          New
         </Link>
       </li>
       <li>
         <Link href="">
-        <TrendingUp />
-        Top
+          <TrendingUp />
+          Top
         </Link>
       </li>
 
@@ -37,7 +38,7 @@ import { Star, Flame, TrendingUp, Megaphone, Layout } from 'lucide-vue-next'
             <Layout />
             More
           </summary>
-          <ul class="rounded-box">
+          <ul class="rounded-box z-10">
             <li>
               <Link href="#">Item 1</Link>
             </li>

@@ -5,8 +5,18 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.integer('blocker_id').unsigned().references('user_id').inTable('profiles').onDelete('CASCADE')
-      table.integer('blocked_id').unsigned().references('user_id').inTable('profiles').onDelete('CASCADE')
+      table
+        .integer('blocker_id')
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
+      table
+        .integer('blocked_id')
+        .unsigned()
+        .references('user_id')
+        .inTable('profiles')
+        .onDelete('CASCADE')
       table.timestamp('created_at')
       table.primary(['blocker_id', 'blocked_id'])
       table.unique(['blocker_id', 'blocked_id'])

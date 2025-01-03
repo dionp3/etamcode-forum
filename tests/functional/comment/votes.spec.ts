@@ -15,7 +15,10 @@ test.group('Comment votes', (g) => {
   g.teardown(async () => {
     await db.rollbackGlobalTransaction()
   })
-  test('Returns 200 when authenticated user upvotes a non restricted comments', async ({ assert, client }) => {
+  test('Returns 200 when authenticated user upvotes a non restricted comments', async ({
+    assert,
+    client,
+  }) => {
     const comment = await Comment.query()
       .where('isRemoved', false)
       .andWhere('isDeleted', false)
@@ -27,7 +30,9 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const response = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`
+      )
       .loginAs(user)
       .form(data)
       .withCsrfToken()
@@ -35,7 +40,7 @@ test.group('Comment votes', (g) => {
     assert.equal(response.body().message, 'Comment upvoted')
     await comment.refresh()
     await comment.load('voters')
-    const vote = comment.voters.find((voter) => voter.userId === user.id)
+    let vote = comment.voters.find((voter) => voter.userId === user.id)
     assert.exists(vote)
     assert.equal(vote?.$extras.pivot_score, 1)
     assert.equal(vote?.$extras.pivot_post_id, comment.postId)
@@ -57,7 +62,9 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const response = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`
+      )
       .form(data)
       .withCsrfToken()
       .withInertia()
@@ -68,7 +75,10 @@ test.group('Comment votes', (g) => {
     assert.isEmpty(comment.voters)
   })
 
-  test('Returns 200 when authenticated user downvotes a non restricted comments', async ({ assert, client }) => {
+  test('Returns 200 when authenticated user downvotes a non restricted comments', async ({
+    assert,
+    client,
+  }) => {
     const comment = await Comment.query()
       .where('isRemoved', false)
       .andWhere('isDeleted', false)
@@ -80,7 +90,9 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const response = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`
+      )
       .loginAs(user)
       .form(data)
       .withCsrfToken()
@@ -89,7 +101,7 @@ test.group('Comment votes', (g) => {
     assert.equal(response.body().message, 'Comment downvoted')
     await comment.refresh()
     await comment.load('voters')
-    const vote = comment.voters.find((voter) => voter.userId === user.id)
+    let vote = comment.voters.find((voter) => voter.userId === user.id)
     assert.exists(vote)
     assert.equal(vote?.$extras.pivot_score, -1)
     assert.equal(vote?.$extras.pivot_post_id, comment.postId)
@@ -111,7 +123,9 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const response = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`
+      )
       .form(data)
       .withCsrfToken()
       .withInertia()
@@ -122,7 +136,10 @@ test.group('Comment votes', (g) => {
     assert.isEmpty(comment.voters)
   })
 
-  test('Returns 403 when authenticated user upvotes restricted comments', async ({ assert, client }) => {
+  test('Returns 403 when authenticated user upvotes restricted comments', async ({
+    assert,
+    client,
+  }) => {
     const comment = await Comment.query()
       .where('isRemoved', false)
       .andWhere('isDeleted', false)
@@ -134,14 +151,19 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const response = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`
+      )
       .loginAs(user)
       .form(data)
       .withCsrfToken()
     assert.equal(response.status(), 403)
   })
 
-  test('Returns 403 when authenticated user downvotes restricted posts', async ({ assert, client }) => {
+  test('Returns 403 when authenticated user downvotes restricted posts', async ({
+    assert,
+    client,
+  }) => {
     const comment = await Comment.query()
       .where('isRemoved', false)
       .andWhere('isDeleted', false)
@@ -153,7 +175,9 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const response = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`
+      )
       .loginAs(user)
       .form(data)
       .withCsrfToken()
@@ -172,7 +196,9 @@ test.group('Comment votes', (g) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const data = { userId: user.id, commentSlug: comment.slug }
     const upvoteResponse = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/upvote`
+      )
       .loginAs(user)
       .form(data)
       .withCsrfToken()
@@ -180,7 +206,9 @@ test.group('Comment votes', (g) => {
     assert.equal(upvoteResponse.body().message, 'Comment upvoted')
 
     const downvoteResponse = await client
-      .post(`/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`)
+      .post(
+        `/api/f/${comment.post.forum.name}/posts/${comment.post.slug}/comments/${comment.slug}/downvote`
+      )
       .loginAs(user)
       .form(data)
       .withCsrfToken()
@@ -188,8 +216,9 @@ test.group('Comment votes', (g) => {
     assert.equal(downvoteResponse.body().message, 'Comment downvoted')
     await comment.refresh()
     await comment.load('voters')
-    const downvote = comment.voters.find((voter) => voter.userId === user.id)
+    let downvote = comment.voters.find((voter) => voter.userId === user.id)
     assert.exists(downvote)
     assert.equal(downvote?.$extras.pivot_score, -1)
   })
 })
+

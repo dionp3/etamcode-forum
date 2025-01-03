@@ -17,7 +17,10 @@ test.group('Forum followers', (group) => {
     await db.rollbackGlobalTransaction()
   })
   test('Can attach user to report post', async ({ assert }) => {
-    const user = await User.query().where('username', 'authorizeduser').preload('profile').firstOrFail()
+    const user = await User.query()
+      .where('username', 'authorizeduser')
+      .preload('profile')
+      .firstOrFail()
 
     const forum = await Forum.query()
       .where('isRemoved', false)
@@ -27,7 +30,11 @@ test.group('Forum followers', (group) => {
       .andWhere('visibility', 'public')
       .has('posts')
       .preload('posts', (post) =>
-        post.where('isRemoved', false).andWhere('isLocked', false).has('comments').preload('comments'),
+        post
+          .where('isRemoved', false)
+          .andWhere('isLocked', false)
+          .has('comments')
+          .preload('comments')
       )
       .firstOrFail()
 
@@ -42,7 +49,10 @@ test.group('Forum followers', (group) => {
     console.log(post)
 
     await Profile.reportComment(user.profile, comment, 'bad comment')
-    const report = await Profile.query().where('userId', user.id).preload('reportedComments').firstOrFail()
+    const report = await Profile.query()
+      .where('userId', user.id)
+      .preload('reportedComments')
+      .firstOrFail()
     const reportComment = report.reportedComments
 
     assert.equal(reportComment[0].id, comment.id)

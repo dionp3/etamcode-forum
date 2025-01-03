@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3'
-import { KeyRound, Mail, User } from 'lucide-vue-next'
-import { reactive } from 'vue'
-import VueTurnstile from 'vue-turnstile'
+import AuthLayout from '~/layouts/AuthLayout.vue'
+import { useForm, usePage } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
+import { Mail, User, KeyRound } from 'lucide-vue-next'
+import { formatErrors } from '../../components/NavBar/RightContent/AuthModal/formatErrors'
 import { z } from 'zod'
-import { formatErrors } from '~/utils/formatErrors'
+import { reactive, computed } from 'vue'
+import VueTurnstile from 'vue-turnstile'
 
-defineProps<{ turnstileSiteKey: string }>()
+const page = usePage()
+const turnstileSiteKey = computed(() => page.props.turnstileSiteKey as string)
+const errors = computed(() => page.props.errors as unknown as string)
+console.log(errors.value)
 
 // Define Zod validation schema
 const registerSchema = z
   .object({
-    username: z.string().min(3, { message: 'Username minimal 3 karakter' }),
     email: z.string().email({ message: 'Email tidak valid' }),
+    username: z.string().min(3, { message: 'Username minimal 3 karakter' }),
     password: z.string().min(8, { message: 'Password minimal 8 karakter' }),
     confirmPassword: z.string(),
   })
@@ -23,8 +28,8 @@ const registerSchema = z
 
 // Inertia Form
 const form = useForm({
-  username: '',
   email: '',
+  username: '',
   password: '',
   confirmPassword: '',
   turnstileToken: '',
@@ -32,8 +37,8 @@ const form = useForm({
 
 // State for storing Zod validation errors
 const zodErrors = reactive<{
-  username?: string
   email?: string
+  username?: string
   password?: string
   confirmPassword?: string
 }>({})
@@ -41,8 +46,8 @@ const zodErrors = reactive<{
 // Function to validate with Zod before submitting
 const handleSubmit = async () => {
   // Reset Zod errors
-  zodErrors.username = ''
   zodErrors.email = ''
+  zodErrors.username = ''
   zodErrors.password = ''
   zodErrors.confirmPassword = ''
 
@@ -61,13 +66,15 @@ const handleSubmit = async () => {
     }
   }
 }
+
+defineOptions({ layout: AuthLayout })
 </script>
 
 <template>
   <div class="flex min-h-screen">
     <!-- ART section -->
     <div class="hidden lg:flex basis-2/3 items-center justify-center">
-      <img src="/resources/images/Bg.webp" alt="" class="object-cover w-full h-full" />
+      <img src="../../../resources/assets/Bg.jpg " alt="" class="object-cover w-full h-full" />
     </div>
 
     <!-- Register Section -->
@@ -83,6 +90,14 @@ const handleSubmit = async () => {
 
       <!-- Register Form -->
       <form @submit.prevent="handleSubmit" class="space-y-3">
+        <!-- Email Input -->
+        <label class="input input-bordered flex items-center gap-2">
+          <Mail />
+          <input type="text" class="grow" placeholder="Email" v-model="form.email" />
+        </label>
+        <div v-if="form.errors.email || zodErrors.email" class="text-sm mb-4 text-red-400">
+          {{ formatErrors(form.errors.email) || zodErrors.email }}
+        </div>
 
         <!-- Username Input -->
         <label class="input input-bordered flex items-center gap-2">
@@ -91,15 +106,6 @@ const handleSubmit = async () => {
         </label>
         <div v-if="form.errors.username || zodErrors.username" class="text-sm mb-4 text-red-400">
           {{ formatErrors(form.errors.username) || zodErrors.username }}
-        </div>
-
-        <!-- Email Input -->
-        <label class="input input-bordered flex items-center gap-2">
-          <Mail />
-          <input type="text" class="grow" placeholder="Email" v-model="form.email" />
-        </label>
-        <div v-if="form.errors.email || zodErrors.email" class="text-sm mb-4 text-red-400">
-          {{ formatErrors(form.errors.email) || zodErrors.email }}
         </div>
 
         <!-- Password Input -->
@@ -114,7 +120,12 @@ const handleSubmit = async () => {
         <!-- Confirm Password Input -->
         <label class="input input-bordered flex items-center gap-2">
           <KeyRound />
-          <input type="password" class="grow" placeholder="Confirm Password" v-model="form.confirmPassword" />
+          <input
+            type="password"
+            class="grow"
+            placeholder="Confirm Password"
+            v-model="form.confirmPassword"
+          />
         </label>
         <div v-if="zodErrors.confirmPassword" class="text-sm mb-4 text-red-400">
           {{ zodErrors.confirmPassword }}
@@ -124,8 +135,13 @@ const handleSubmit = async () => {
         <div v-if="form.errors.turnstileToken" class="text-sm text-red-400">
           {{ form.errors.turnstileToken }}
         </div>
+        <div v-if="errors === 'User already exists'" class="text-sm text-red-400">{{errors}}</div>
 
-        <button type="submit" :disabled="form.processing" class="btn btn-primary w-full rounded-full">
+        <button
+          type="submit"
+          :disabled="form.processing"
+          class="btn btn-primary w-full rounded-full"
+        >
 
           <span v-if="form.progress" class="loading loading-spinner loading-sm"></span>
           <span v-else>Register</span>

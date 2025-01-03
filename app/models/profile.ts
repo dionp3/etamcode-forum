@@ -1,11 +1,20 @@
-import { BaseModel, afterCreate, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
+import { DateTime } from 'luxon'
+import {
+  afterCreate,
+  afterSave,
+  BaseModel,
+  belongsTo,
+  column,
+  hasMany,
+  manyToMany,
+} from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
-import type { DateTime } from 'luxon'
+import User from '#models/user'
+import Post from '#models/post'
+import Forum from '#models/forum'
 import Avatar from '#models/avatar'
 import Comment from '#models/comment'
-import Forum from '#models/forum'
-import Post from '#models/post'
-import User from '#models/user'
+import DefaultAvatar from '#models/default_avatar'
 export default class Profile extends BaseModel {
   @column({ isPrimary: true, columnName: 'user_id' })
   declare userId: number
@@ -13,21 +22,21 @@ export default class Profile extends BaseModel {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
-  @column({ columnName: 'avatar_id' })
-  declare avatarId: number
+  @column()
+  declare avatarId: number | null
 
   @belongsTo(() => Avatar, {
     foreignKey: 'avatarId',
   })
   declare avatar: BelongsTo<typeof Avatar>
 
-  // @column({ columnName: 'default_avatar_id' })
-  // declare defaultAvatarId: number
+  @column({ columnName: 'default_avatar_id' })
+  declare defaultAvatarId: number
 
-  // @belongsTo(() => DefaultAvatar, {
-  //   foreignKey: 'defaultAvatarId',
-  // })
-  // declare defaultAvatar: BelongsTo<typeof DefaultAvatar>
+  @belongsTo(() => DefaultAvatar, {
+    foreignKey: 'defaultAvatarId',
+  })
+  declare defaultAvatar: BelongsTo<typeof DefaultAvatar>
 
   @hasMany(() => Post, {
     foreignKey: 'posterId',
@@ -204,19 +213,6 @@ export default class Profile extends BaseModel {
   })
   declare savedComments: ManyToMany<typeof Comment>
 
-  @manyToMany(() => Post, {
-    pivotTable: 'post_hides',
-    localKey: 'userId',
-    pivotForeignKey: 'user_id',
-    relatedKey: 'id',
-    pivotRelatedForeignKey: 'post_id',
-    pivotTimestamps: {
-      createdAt: true,
-      updatedAt: false,
-    },
-  })
-  declare postHide: ManyToMany<typeof Post>
-
   @column()
   declare displayName: string | null
 
@@ -239,14 +235,10 @@ export default class Profile extends BaseModel {
   declare updatedAt: DateTime
 
   @afterCreate()
-  static async assignDefault(profile: Profile) {
-    if (!profile.displayName) {
-      const user = await profile.related('user').query().first()
-      await profile.merge({ displayName: user?.username }).save()
-    }
-    if (!profile.avatarId) {
-      const avatar = await Avatar.create({ url: `https://ui-avatars.com/api/?name=${profile.displayName}` })
-      await profile.merge({ avatarId: avatar.id }).save()
+  static async assignAvatar(profile: Profile) {
+    const randomAvatar = await DefaultAvatar.query().orderByRaw('RANDOM()').first()
+    if (randomAvatar) {
+      await profile.merge({ defaultAvatarId: randomAvatar.id }).save()
     }
   }
 
@@ -298,16 +290,12 @@ export default class Profile extends BaseModel {
     await profile.related('savedComments').detach([comment.id])
   }
 
-  static async hidePost(profile: Profile, targetPost: Post): Promise<void> {
-    await profile.related('postHide').attach([targetPost.id])
-  }
-
-  static async unhidePost(profile: Profile, targetPost: Post): Promise<void> {
-    await profile.related('postHide').detach([targetPost.id])
-  }
-
   static async upvotePost(profile: Profile, post: Post): Promise<void> {
-    const existingVote = await profile.related('likedPosts').query().where('post_id', post.id).first()
+    const existingVote = await profile
+      .related('likedPosts')
+      .query()
+      .where('post_id', post.id)
+      .first()
 
     if (existingVote) {
       // If there's an existing upvote, remove it
@@ -329,7 +317,11 @@ export default class Profile extends BaseModel {
   }
 
   static async downvotePost(profile: Profile, post: Post): Promise<void> {
-    const existingVote = await profile.related('likedPosts').query().where('post_id', post.id).first()
+    const existingVote = await profile
+      .related('likedPosts')
+      .query()
+      .where('post_id', post.id)
+      .first()
 
     if (existingVote) {
       // If there's an existing downvote, remove it
@@ -351,21 +343,21 @@ export default class Profile extends BaseModel {
   }
 
   static async upvoteComment(voter: Profile, post: Post, targetComment: Comment): Promise<void> {
-    const existingVote = await voter.related('likedComments').query().where('comment_id', targetComment.id).first()
+    const existingVote = await voter
+      .related('likedComments')
+      .query()
+      .where('comment_id', targetComment.id)
+      .first()
 
     if (existingVote) {
       // If there's an existing upvote, remove it
       if (existingVote.$extras.pivot_score === 1) {
-        await voter.related('likedComments').detach([targetComment.id])
+        await voter.related('likedComments').detach([targetComment.id, post.id])
       }
       // If there's an existing downvote, change it to upvote
       else {
-        // await voter.related('likedComments').sync({
-        //   [targetComment.id]: { score: 1 },
-        // })
-        await voter.related('likedComments').detach([targetComment.id]) // Remove existing downvote
-        await voter.related('likedComments').attach({
-          [targetComment.id]: { score: 1, post_id: post.id, comment_id: targetComment.id },
+        await voter.related('likedComments').sync({
+          [targetComment.id]: { score: 1 },
         })
       }
     } else {
@@ -377,7 +369,11 @@ export default class Profile extends BaseModel {
   }
 
   static async downvoteComment(voter: Profile, post: Post, targetComment: Comment): Promise<void> {
-    const existingVote = await voter.related('likedComments').query().where('comment_id', targetComment.id).first()
+    const existingVote = await voter
+      .related('likedComments')
+      .query()
+      .where('comment_id', targetComment.id)
+      .first()
 
     if (existingVote) {
       // If there's an existing downvote, remove it
@@ -386,12 +382,8 @@ export default class Profile extends BaseModel {
       }
       // If there's an existing upvote, change it to downvote
       else {
-        // await voter.related('likedComments').sync({
-        //   [targetComment.id]: { score: -1 },
-        // })
-        await voter.related('likedComments').detach([targetComment.id]) // Remove existing upvote
-        await voter.related('likedComments').attach({
-          [targetComment.id]: { score: -1, post_id: post.id, comment_id: targetComment.id },
+        await voter.related('likedComments').sync({
+          [targetComment.id]: { score: -1 },
         })
       }
     } else {
@@ -406,7 +398,11 @@ export default class Profile extends BaseModel {
     await profile.related('reportedPosts').attach({ [postTarget.id]: { reason } })
   }
 
-  static async reportComment(profile: Profile, targetComment: Comment, reason: string): Promise<void> {
+  static async reportComment(
+    profile: Profile,
+    targetComment: Comment,
+    reason: string
+  ): Promise<void> {
     await profile.related('reportedComments').attach({ [targetComment.id]: { reason } })
   }
 }

@@ -5,10 +5,7 @@ const allyConfig = defineConfig({
   google: services.google({
     clientId: env.get('GOOGLE_CLIENT_ID'),
     clientSecret: env.get('GOOGLE_CLIENT_SECRET'),
-    callbackUrl:
-      env.get('NODE_ENV') === 'production'
-        ? 'https://etamcodeforum.zapto.org/auth/google/callback'
-        : 'http://localhost:3333/auth/google/callback',
+    callbackUrl: 'https://etamforum.zapto.org/auth/google/callback',
   }),
 })
 

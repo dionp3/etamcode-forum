@@ -17,7 +17,10 @@ test.group('Forum followers', (group) => {
   //     await db.rollbackGlobalTransaction()
   //   })
   test('Can attach user to report post', async ({ assert }) => {
-    const user = await User.query().where('username', 'authorizeduser').preload('profile').firstOrFail()
+    const user = await User.query()
+      .where('username', 'authorizeduser')
+      .preload('profile')
+      .firstOrFail()
     const forum = await Forum.query()
       .where('isRemoved', false)
       .andWhere('isDeleted', false)
@@ -30,7 +33,10 @@ test.group('Forum followers', (group) => {
     const post = forum.posts[0]
 
     await Profile.reportPost(user.profile, post, 'bad post')
-    const report = await Profile.query().where('userId', user.id).preload('reportedPosts').firstOrFail()
+    const report = await Profile.query()
+      .where('userId', user.id)
+      .preload('reportedPosts')
+      .firstOrFail()
     const reportPost = report.reportedPosts
 
     assert.equal(reportPost[0].id, post.id)

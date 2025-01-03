@@ -7,12 +7,11 @@ export const UserFactory = factory
     const exampleEmail = faker.internet.exampleEmail()
     const normalizeEmail = validator.normalizeEmail(exampleEmail) || exampleEmail
     return {
-      username: faker.internet.username(),
+      username: faker.internet.userName(),
       email: normalizeEmail,
 
       password: '12341234',
       isAdmin: false,
-      isVerified: true,
     }
   })
   .build()

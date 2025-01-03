@@ -18,7 +18,7 @@ export default class ProfilePivotSeeder extends BaseSeeder {
         const alreadyFollowing = await profile.related('followers').query()
         const alreadyFollowingIds = alreadyFollowing.map((follower) => follower.userId)
         const newFollowers = randomFollowers.filter(
-          (user) => !alreadyFollowingIds.includes(user.userId) && user.userId !== profile.userId,
+          (user) => !alreadyFollowingIds.includes(user.userId) && user.userId !== profile.userId
         )
 
         // Attach new followers
@@ -28,18 +28,23 @@ export default class ProfilePivotSeeder extends BaseSeeder {
       // Blocked Profiles Logic
       const totalBlocked = Math.floor(Math.random() * 3) // Random number of blocked profiles
       if (totalBlocked > 0) {
-        const randomBlockedProfiles = profiles.sort(() => 0.5 - Math.random()).slice(0, totalBlocked)
+        const randomBlockedProfiles = profiles
+          .sort(() => 0.5 - Math.random())
+          .slice(0, totalBlocked)
 
         // Filter already blocked and self
         const alreadyBlocked = await profile.related('blockedProfiles').query()
         const alreadyBlockedIds = alreadyBlocked.map((blocked) => blocked.userId)
         const newBlockedProfiles = randomBlockedProfiles.filter(
           (blockedProfile) =>
-            !alreadyBlockedIds.includes(blockedProfile.userId) && blockedProfile.userId !== profile.userId,
+            !alreadyBlockedIds.includes(blockedProfile.userId) &&
+            blockedProfile.userId !== profile.userId
         )
 
         // Attach new blocked profiles
-        await profile.related('blockedProfiles').attach(newBlockedProfiles.map((profile) => profile.userId))
+        await profile
+          .related('blockedProfiles')
+          .attach(newBlockedProfiles.map((profile) => profile.userId))
       }
     }
   }

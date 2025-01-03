@@ -7,9 +7,21 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
 
-      table.integer('post_id').unsigned().notNullable().references('id').inTable('posts').onDelete('CASCADE')
+      table
+        .integer('post_id')
+        .unsigned()
+        .notNullable()
+        .references('id')
+        .inTable('posts')
+        .onDelete('CASCADE')
 
-      table.integer('hashtag_id').unsigned().notNullable().references('id').inTable('hashtags').onDelete('CASCADE')
+      table
+        .integer('hashtag_id')
+        .unsigned()
+        .notNullable()
+        .references('id')
+        .inTable('hashtags')
+        .onDelete('CASCADE')
 
       table.timestamp('created_at')
       table.timestamp('updated_at')

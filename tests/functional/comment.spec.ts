@@ -86,7 +86,9 @@ test.group('Comment', (group) => {
         post
           .where('isRemoved', false)
           .andWhere('isLocked', false)
-          .preload('comments', (comment) => comment.preload('creator', (creator) => creator.preload('user'))),
+          .preload('comments', (comment) =>
+            comment.preload('creator', (creator) => creator.preload('user'))
+          )
       )
       .firstOrFail()
 
@@ -115,7 +117,9 @@ test.group('Comment', (group) => {
         post
           .where('isRemoved', false)
           .andWhere('isLocked', false)
-          .preload('comments', (comment) => comment.preload('creator', (creator) => creator.preload('user'))),
+          .preload('comments', (comment) =>
+            comment.preload('creator', (creator) => creator.preload('user'))
+          )
       )
       .firstOrFail()
 
@@ -144,7 +148,9 @@ test.group('Comment', (group) => {
         post
           .where('isRemoved', false)
           .andWhere('isLocked', false)
-          .preload('comments', (comment) => comment.preload('creator', (creator) => creator.preload('user'))),
+          .preload('comments', (comment) =>
+            comment.preload('creator', (creator) => creator.preload('user'))
+          )
       )
       .firstOrFail()
 
@@ -176,7 +182,9 @@ test.group('Comment', (group) => {
         post
           .where('isRemoved', false)
           .andWhere('isLocked', false)
-          .preload('comments', (comment) => comment.preload('creator', (creator) => creator.preload('user'))),
+          .preload('comments', (comment) =>
+            comment.preload('creator', (creator) => creator.preload('user'))
+          )
       )
       .firstOrFail()
 
@@ -204,7 +212,9 @@ test.group('Comment', (group) => {
         post
           .where('isRemoved', false)
           .andWhere('isLocked', false)
-          .preload('comments', (comment) => comment.preload('creator', (creator) => creator.preload('user'))),
+          .preload('comments', (comment) =>
+            comment.preload('creator', (creator) => creator.preload('user'))
+          )
       )
       .firstOrFail()
 
@@ -234,7 +244,9 @@ test.group('Comment', (group) => {
         post
           .where('isRemoved', false)
           .andWhere('isLocked', false)
-          .preload('comments', (comment) => comment.preload('creator', (creator) => creator.preload('user'))),
+          .preload('comments', (comment) =>
+            comment.preload('creator', (creator) => creator.preload('user'))
+          )
       )
       .firstOrFail()
 
@@ -253,7 +265,10 @@ test.group('Comment', (group) => {
     assert.isNotNull(existingComment)
   })
 
-  test('User can update their own comment in a non-restricted forum and post', async ({ assert, client }) => {
+  test('User can update their own comment in a non-restricted forum and post', async ({
+    assert,
+    client,
+  }) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const forum = await Forum.query()
       .where('isRemoved', false)
@@ -285,7 +300,10 @@ test.group('Comment', (group) => {
     assert.equal(comment.content, 'Saya suka makanan ini')
   })
 
-  test('User can delete their own comment in a non-restricted forum and post', async ({ assert, client }) => {
+  test('User can delete their own comment in a non-restricted forum and post', async ({
+    assert,
+    client,
+  }) => {
     const user = await User.findByOrFail('username', 'authorizeduser')
     const forum = await Forum.query()
       .where('isRemoved', false)
@@ -321,7 +339,11 @@ test.group('Comment', (group) => {
       .andWhere('visibility', 'public')
       .has('posts')
       .preload('posts', (post) =>
-        post.where('isRemoved', false).andWhere('isLocked', false).has('comments').preload('comments'),
+        post
+          .where('isRemoved', false)
+          .andWhere('isLocked', false)
+          .has('comments')
+          .preload('comments')
       )
       .firstOrFail()
 
@@ -338,7 +360,10 @@ test.group('Comment', (group) => {
       .withCsrfToken()
       .withInertia()
 
-    const report = await Profile.query().where('userId', user.id).preload('reportedComments').firstOrFail()
+    const report = await Profile.query()
+      .where('userId', user.id)
+      .preload('reportedComments')
+      .firstOrFail()
 
     const reportComment = report.reportedComments
 
@@ -355,7 +380,11 @@ test.group('Comment', (group) => {
       .andWhere('visibility', 'public')
       .has('posts')
       .preload('posts', (post) =>
-        post.where('isRemoved', false).andWhere('isLocked', false).has('comments').preload('comments'),
+        post
+          .where('isRemoved', false)
+          .andWhere('isLocked', false)
+          .has('comments')
+          .preload('comments')
       )
       .firstOrFail()
 
@@ -371,7 +400,10 @@ test.group('Comment', (group) => {
       .withCsrfToken()
       .withInertia()
 
-    const report = await Profile.query().where('userId', user.id).preload('reportedComments').firstOrFail()
+    const report = await Profile.query()
+      .where('userId', user.id)
+      .preload('reportedComments')
+      .firstOrFail()
 
     console.log(response.body())
     console.log(response.status())

@@ -41,7 +41,11 @@ test.group('Forum followers', (group) => {
     const post = await Post.all()
     const comment = await post[0].related('comments').query().firstOrFail()
     await Profile.saveComment(user.profile, comment)
-    const saveComment = await comment.related('commentSavedBy').query().where('profile_id', user.id).first()
+    const saveComment = await comment
+      .related('commentSavedBy')
+      .query()
+      .where('profile_id', user.id)
+      .first()
     assert.isNotNull(saveComment)
   })
 
@@ -52,7 +56,11 @@ test.group('Forum followers', (group) => {
     const comment = await post[0].related('comments').query().firstOrFail()
     await Profile.saveComment(user.profile, comment)
     await Profile.unsaveComment(user.profile, comment)
-    const saveComment = await comment.related('commentSavedBy').query().where('profile_id', user.id).first()
+    const saveComment = await comment
+      .related('commentSavedBy')
+      .query()
+      .where('profile_id', user.id)
+      .first()
     assert.isNull(saveComment)
   })
 })

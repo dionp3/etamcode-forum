@@ -24,7 +24,7 @@ export class FirestoreService {
       .count()
       .get()
       .then((len) => len.data().count)
-    if (collectionLen !== 0) await firestore.recursiveDelete(collection)
+    if (collectionLen != 0) await firestore.recursiveDelete(collection)
   }
 
   async verifyAndSyncUser(email: string, password: string) {
@@ -46,6 +46,7 @@ export class FirestoreService {
 
     if (firestoreUser && localUser) {
       const isValid = await User.verifyCredentials(localUser.email, password)
+      console.log('Valid: ', isValid)
       if (!isValid) throw new Error('Invalid credentials')
     }
 
@@ -62,13 +63,14 @@ export class FirestoreService {
       username: string
       email: string
       password: string
-    },
+    }
   ) {
     const firestoreUser = await this.findUserByEmail(email)
     let localUser = await User.findBy('email', email)
 
     // User exists in Firestore but not locally
     if (firestoreUser && !localUser) {
+      console.log('User exists in Firestore but not locally')
       // return await User.create({
       //   ...userData,
       //   firebaseId: firestoreUser.id,
@@ -78,6 +80,7 @@ export class FirestoreService {
 
     // User doesn't exist in either database
     if (!firestoreUser && !localUser) {
+      console.log("User doesn't exist in either database")
       localUser = await User.create(userData)
       const firebaseId = await this.createUser({
         username: localUser.username,

@@ -10,8 +10,8 @@ export const PostFactory = Factory.define(Post, async ({ faker }) => {
     content: faker.lorem.paragraph(),
     hasImage: hasImage,
     imageUrl: hasImage ? 'https://placehold.co/600x400' : null,
-    isRemoved: faker.datatype.boolean(0.1),
-    isLocked: faker.datatype.boolean(0.1),
+    isRemoved: faker.helpers.arrayElement([true, false]),
+    isLocked: faker.helpers.arrayElement([true, false]),
   }
 })
   .relation('poster', () => UserFactory)

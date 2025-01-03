@@ -1,19 +1,20 @@
-import type User from '#models/user'
-import type Forum from '#models/forum'
+import User from '#models/user'
+import Forum from '#models/forum'
 import { allowGuest, AuthorizationResponse, BasePolicy } from '@adonisjs/bouncer'
 import type { AuthorizerResponse } from '@adonisjs/bouncer/types'
-import type Profile from '#models/profile'
+import Profile from '#models/profile'
 
 export default class ForumPolicy extends BasePolicy {
   @allowGuest()
-  show(user: User | null, moderators: Profile[], creator: Profile, forum: Forum): AuthorizerResponse {
+  show(
+    user: User | null,
+    moderators: Profile[],
+    creator: Profile,
+    forum: Forum
+  ): AuthorizerResponse {
     if (user?.isAdmin) return true
 
-    const isMod = moderators.some((mod) => mod.userId === user?.id)
-
-    if (forum.visibility === 'private' || forum.visibility === 'restricted') {
-      return user ? isMod || user.id === creator?.userId : false
-    }
+    const isMod = moderators.some((mod) => mod?.userId === user?.id)
 
     if (forum.isDeleted) {
       return false

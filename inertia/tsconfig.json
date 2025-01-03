@@ -8,7 +8,7 @@
     "paths": {
       "~/*": ["./*"],
       "lucide-vue-next": ["node_modules/lucide-vue-next"]
-    },
+    }
   },
-  "include": ["./**/*.ts", "./**/*.vue"],
+  "include": ["./**/*.ts", "./**/*.vue"]
 }

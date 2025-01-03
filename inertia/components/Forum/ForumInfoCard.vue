@@ -31,13 +31,16 @@ export default {
         <div class="flex items-center">
           <h2 class="font-bold text-xl w-full align-middle">{{ forum[0].name }}</h2>
         </div>
-        <button v-if="Joined" @click="Joined = false" class="btn btn-outline btn-ghost">Joined</button>
-        <button v-else @click="Joined = true" class="btn btn-secondary">Join</button>
+        <button v-if="!Joined" @click="Joined = true" class="btn btn-secondary">Join</button>
+        <button v-else @click="Joined = false" class="btn btn-outline btn-ghost">Joined</button>
       </div>
       <p :class="{ 'line-clamp-3': !showFullDesc }">
         {{ forum[0].desc }}
       </p>
-      <button @click="showFullDesc = !showFullDesc" class="btn btn-ghost text-secondary font-semibold">
+      <button
+        @click="showFullDesc = !showFullDesc"
+        class="btn btn-ghost text-secondary font-semibold"
+      >
         {{ showFullDesc ? 'See less' : 'See More' }}
       </button>
       <div class="flex flex-row place-content-between">

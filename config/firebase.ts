@@ -5,9 +5,9 @@ import { getAuth } from 'firebase-admin/auth'
 import { getStorage } from 'firebase-admin/storage'
 import env from '#start/env'
 
-if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-  process.env.FIRESTORE_EMULATOR_HOST = env.get('FIRESTORE_EMULATOR_HOST')
-  process.env.FIREBASE_STORAGE_EMULATOR_HOST = env.get('FIREBASE_STORAGE_EMULATOR_HOST')
+if (process.env['NODE_ENV'] === 'development' || process.env['NODE_ENV'] === 'test') {
+  process.env['FIRESTORE_EMULATOR_HOST'] = env.get('FIRESTORE_EMULATOR_HOST')
+  process.env['FIREBASE_STORAGE_EMULATOR_HOST'] = env.get('FIREBASE_STORAGE_EMULATOR_HOST')
 }
 // Initialize Firebase
 const app = initializeApp({

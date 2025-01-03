@@ -5,7 +5,7 @@ export const registerValidator = vine.compile(
     username: vine.string().maxLength(30),
     email: vine.string().email().normalizeEmail(),
     password: vine.string().minLength(8).maxLength(32),
-  }),
+  })
 )
 
 export const loginValidator = vine.compile(
@@ -17,6 +17,6 @@ export const loginValidator = vine.compile(
       vine.group.if((data) => 'email' in data, {
         email: vine.string().email().normalizeEmail(),
       }),
-    ]),
-  ),
+    ])
+  )
 )

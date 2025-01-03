@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 const { light, dark } = require('daisyui/src/theming/themes')
-const primary = '#13C6B5'
+const primary = '#237199'
 const secondary = '#C8565B'
 const accent = '#F5CCCC'
 export default {
   content: [
+    './resources/**/*.edge',
     './inertia/components/**/*.{js,ts,vue}',
     './inertia/layouts/**/*.{js,ts,vue}',
     './inertia/pages/**/*.{js,ts,vue}',
@@ -40,5 +41,4 @@ export default {
       },
     ],
   },
-  darkMode: ['selector', "[data-theme*='dark']"],
 }

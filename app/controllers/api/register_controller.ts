@@ -40,6 +40,7 @@ export default class RegisterController {
           })
           .catch((error) => {
             console.error('Mailgun Error:', error)
+            console.log('')
           })
 
         await auth.use('web').login(user)
@@ -73,7 +74,7 @@ export default class RegisterController {
       await auth.use('web').login(user)
       return response.redirect().toPath('/')
     } catch (error) {
-      error
+      console.log(error)
       return response.internalServerError({ message: 'Bad Request', error })
     }
   }

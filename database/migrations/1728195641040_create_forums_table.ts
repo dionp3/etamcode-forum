@@ -13,7 +13,10 @@ export default class extends BaseSchema {
       table.boolean('is_deleted').defaultTo(false).notNullable()
       table.boolean('is_hidden').defaultTo(false).notNullable()
       table.boolean('is_posting_restricted').defaultTo(false).notNullable()
-      table.enum('visibility', ['public', 'private', 'restricted']).defaultTo('public').notNullable()
+      table
+        .enum('visibility', ['public', 'private', 'restricted'])
+        .defaultTo('public')
+        .notNullable()
       table.timestamp('created_at', { useTz: true }).notNullable()
       table.timestamp('updated_at', { useTz: true }).notNullable()
     })

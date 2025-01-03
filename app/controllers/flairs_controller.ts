@@ -6,18 +6,17 @@ import type { HttpContext } from '@adonisjs/core/http'
 export default class FlairsController {
   /**
    * @index
-   * @summary Page list of flairs in a forum
+   * @summary List of flairs in a forum
    * @tag Flairs
    * @responseBody 200 - <Forum>.with(flairs)
    * @responseBody 404 - {"message": 'No flairs'}
    * @responseBody 400 - {"message": 'Bad request', "error": "object"}
    */
-  async index({ params, response, inertia }: HttpContext) {
+  async index({ params, response }: HttpContext) {
     try {
-      const forum = await Forum.findByOrFail('name', params.name)
+      const forum = await Forum.findByOrFail('id', params.forum_id)
       const forumWithFlairs = await forum.related('flairs').query()
-      // return response.json({ data: forumWithFlairs })
-      return inertia.render('flairs/index', { forum: forum, flairs: forumWithFlairs })
+      return response.json({ data: forumWithFlairs })
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.ok({ message: 'No flairs', data: {} })
@@ -32,13 +31,8 @@ export default class FlairsController {
    * @summary Renders page to create flair in forum
    * @tag Flairs
    */
-  async create({ request, response, inertia, params, bouncer }: HttpContext) {
-    const forum = await Forum.findByOrFail('name', params.name)
-    const moderators = await forum.related('moderators').query()
-    if (await bouncer.with('FlairPolicy').denies('create', moderators)) {
-      return response.redirect().toPath(`/f/${forum.name}`)
-    }
-    return inertia.render('flairs/create', { forum: { id: forum.id, name: forum.name } })
+  async create({ request, response, inertia }: HttpContext) {
+    return inertia.render('flairs/create')
   }
 
   /**
@@ -50,14 +44,14 @@ export default class FlairsController {
    */
   async store({ bouncer, params, request, response }: HttpContext) {
     try {
-      const forum = await Forum.findByOrFail('name', params.name)
+      const forum = await Forum.findByOrFail('id', params.forum_id)
       const moderators = await forum.related('moderators').query()
+      const payload = await request.validateUsing(createFlairValidator)
       if (await bouncer.with('FlairPolicy').denies('create', moderators)) {
         return response.forbidden({ message: 'You are not allowed to add flairs' })
       }
-      const payload = await request.validateUsing(createFlairValidator)
       const flair = await Flair.create(payload)
-      return response.redirect().toPath(`/f/${forum.name}/flairs`)
+      return response.created({ message: 'Flair created', data: flair })
     } catch (error) {
       return response.badRequest({ message: 'Bad request', error: error })
     }
@@ -67,19 +61,6 @@ export default class FlairsController {
    * Show individual record
    */
   async show({ params }: HttpContext) {}
-
-  async edit({ params, bouncer, response, inertia }: HttpContext) {
-    const forum = await Forum.findByOrFail('name', params.name)
-    const moderators = await forum.related('moderators').query()
-    if (await bouncer.with('FlairPolicy').denies('create', moderators)) {
-      return response.forbidden({ message: 'You are not allowed to add flairs' })
-    }
-    const flair = await Flair.findByOrFail('id', params.id)
-    return inertia.render('flairs/edit', {
-      forum: { id: forum.id, name: forum.name },
-      flair: { id: flair.id, name: flair.name, color: flair.color },
-    })
-  }
 
   /**
    * @update
@@ -92,7 +73,7 @@ export default class FlairsController {
    */
   async update({ bouncer, params, request, response }: HttpContext) {
     try {
-      const forum = await Forum.findByOrFail('name', params.name)
+      const forum = await Forum.findByOrFail('id', params.forum_id)
       const flair = await Flair.findByOrFail('id', params.id)
       const moderators = await forum.related('moderators').query()
       const payload = await request.validateUsing(createFlairValidator)
@@ -100,7 +81,7 @@ export default class FlairsController {
         return response.forbidden({ message: 'You are not allowed to add flairs' })
       }
       await flair.merge(payload).save()
-      return response.redirect().toPath(`/f/${forum.name}/flairs`)
+      return response.ok({ message: 'Flair modified', data: flair })
     } catch (error) {
       if (error.code === 'E_ROW_NOT_FOUND') {
         return response.notFound({ message: 'Forum or flair not found', error: error })

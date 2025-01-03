@@ -45,7 +45,10 @@ test.group('Forum', (group) => {
   })
 
   test('Reguler user cannot see restricred forums', async ({ assert, client }) => {
-    const regularUser = await Profile.query().doesntHave('moderatedForums').preload('user').firstOrFail()
+    const regularUser = await Profile.query()
+      .doesntHave('moderatedForums')
+      .preload('user')
+      .firstOrFail()
     const response = await client.get('/api/f').loginAs(regularUser.user)
     const forums: Forum[] = response.body().forums
     const hasRestrictedForums = forums.some((forum) => forum.isRemoved === true)
@@ -53,7 +56,10 @@ test.group('Forum', (group) => {
     assert.isFalse(hasRestrictedForums)
   })
 
-  test('Authenticated and NON authenticated user can see detail of existing forum', async ({ assert, client }) => {
+  test('Authenticated and NON authenticated user can see detail of existing forum', async ({
+    assert,
+    client,
+  }) => {
     // Firstly first, find a forum that has posts in it.
     const forum = await Forum.query()
       .has('moderators')
@@ -64,7 +70,10 @@ test.group('Forum', (group) => {
       .andWhere('isDeleted', false)
       .andWhere('isHidden', false)
       .firstOrFail()
-    const regularUser = await Profile.query().preload('user').doesntHave('moderatedForums').firstOrFail()
+    const regularUser = await Profile.query()
+      .preload('user')
+      .doesntHave('moderatedForums')
+      .firstOrFail()
     // console.log(forum.isRemoved)
     assert.exists(forum)
     assert.exists(regularUser)
@@ -86,7 +95,12 @@ test.group('Forum', (group) => {
       isPostingRestricted: false,
       imageUrl: null,
     }
-    const response = await client.post('/api/f').loginAs(authenticatedUser).form(data).withInertia().withCsrfToken()
+    const response = await client
+      .post('/api/f')
+      .loginAs(authenticatedUser)
+      .form(data)
+      .withInertia()
+      .withCsrfToken()
     const forumId = response.body().data.id
     const forum = await Forum.findByOrFail('id', forumId)
     await forum.load('moderators', (mods) => mods.orderBy('pivot_created_at', 'asc'))
@@ -117,7 +131,10 @@ test.group('Forum', (group) => {
     response.assertInertiaComponent('home')
   })
 
-  test('Authenticated user cannot create forum with whitespaces in name', async ({ assert, client }) => {
+  test('Authenticated user cannot create forum with whitespaces in name', async ({
+    assert,
+    client,
+  }) => {
     const authenticatedUser = await User.findByOrFail('username', 'authorizeduser')
     const name = 'Forum Orang Keren'
     const description = 'Tempatnya orang keren berkumpul'
@@ -137,7 +154,7 @@ test.group('Forum', (group) => {
   })
 
   test('User cannot get non existent forum', async ({ assert, client }) => {
-    const response = await client.get('/api/f/kontolodon999')
+    const response = await client.get(`/api/f/kontolodon999`)
     assert.equal(response.status(), 404)
   })
 
@@ -152,7 +169,7 @@ test.group('Forum', (group) => {
   })
 
   test('Forum creator can add another moderator', async ({ assert, client }) => {
-    const forum = await Forum.query().has('moderators').preload('moderators').firstOrFail()
+    let forum = await Forum.query().has('moderators').preload('moderators').firstOrFail()
     const creator = forum.moderators[0]
     const moderatorsLength = forum.moderators.length
     await creator.load('user')
@@ -164,14 +181,17 @@ test.group('Forum', (group) => {
       .form(data)
       .withCsrfToken()
       .withInertia()
-    const forumModsAfterAddition = await Forum.query().where('id', '=', forum.id).preload('moderators').firstOrFail()
+    let forumModsAfterAddition = await Forum.query()
+      .where('id', '=', forum.id)
+      .preload('moderators')
+      .firstOrFail()
     const moderatorsLenAfterAddition = forumModsAfterAddition.moderators.length
     assert.equal(response.status(), 200)
     assert.notEqual(moderatorsLength, moderatorsLenAfterAddition)
   })
 
   test('Forum moderator can add another moderator', async ({ assert, client }) => {
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
@@ -186,27 +206,33 @@ test.group('Forum', (group) => {
       .form(data)
       .withCsrfToken()
       .withInertia()
-    const forumModsAfterAddition = await Forum.query().where('id', '=', forum.id).preload('moderators').firstOrFail()
+    let forumModsAfterAddition = await Forum.query()
+      .where('id', '=', forum.id)
+      .preload('moderators')
+      .firstOrFail()
     const moderatorsLenAfterAddition = forumModsAfterAddition.moderators.length
     assert.equal(response.status(), 200)
     assert.notEqual(moderatorsLength, moderatorsLenAfterAddition)
   })
 
   test('Forum moderator cannot delete their moderated forum', async ({ assert, client }) => {
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
     const moderator = forum.moderators[1]
     await moderator.load('user')
-    const response = await client.delete(`/api/f/${forum.name}`).loginAs(moderator.user).withCsrfToken()
-    const forumAfterTryDeletion = await Forum.query().where('id', '=', forum.id).firstOrFail()
+    const response = await client
+      .delete(`/api/f/${forum.name}`)
+      .loginAs(moderator.user)
+      .withCsrfToken()
+    let forumAfterTryDeletion = await Forum.query().where('id', '=', forum.id).firstOrFail()
     assert.equal(response.status(), 403)
     assert.exists(forumAfterTryDeletion)
   })
 
   test('Forum creator can remove their moderator', async ({ assert, client }) => {
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
@@ -220,7 +246,10 @@ test.group('Forum', (group) => {
       .form(data)
       .withCsrfToken()
       .withInertia()
-    const forumModsAfterAddition = await Forum.query().where('id', '=', forum.id).preload('moderators').firstOrFail()
+    let forumModsAfterAddition = await Forum.query()
+      .where('id', '=', forum.id)
+      .preload('moderators')
+      .firstOrFail()
     const moderatorsLenAfterRemoval = forumModsAfterAddition.moderators.length
     assert.equal(response.status(), 200)
     assert.notEqual(moderatorsLength, moderatorsLenAfterRemoval)
@@ -232,14 +261,18 @@ test.group('Forum', (group) => {
       description: 'Modified by creator',
       isPostingRestricted: false,
     }
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
     assert.exists(forum)
     const creator = forum.moderators[0]
     await creator.load('user')
-    const response = await client.put(`/api/f/${forum.name}`).loginAs(creator.user).form(data).withCsrfToken()
+    const response = await client
+      .put(`/api/f/${forum.name}`)
+      .loginAs(creator.user)
+      .form(data)
+      .withCsrfToken()
     const forumAfterModified = await Forum.query().where('id', '=', forum.id).firstOrFail()
     assert.exists(forumAfterModified)
     assert.equal(response.status(), 200)
@@ -253,14 +286,18 @@ test.group('Forum', (group) => {
       description: 'Modified by moderator',
       isPostingRestricted: false,
     }
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
     assert.exists(forum)
     const moderator = forum.moderators[1]
     await moderator.load('user')
-    const response = await client.put(`/api/f/${forum.name}`).loginAs(moderator.user).form(data).withCsrfToken()
+    const response = await client
+      .put(`/api/f/${forum.name}`)
+      .loginAs(moderator.user)
+      .form(data)
+      .withCsrfToken()
     const forumAfterModified = await Forum.query().where('id', '=', forum.id).firstOrFail()
     assert.exists(forumAfterModified)
     assert.equal(response.status(), 200)
@@ -269,7 +306,7 @@ test.group('Forum', (group) => {
   })
 
   test('Forum creator cannot remove themselves as moderator', async ({ assert, client }) => {
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
@@ -282,25 +319,37 @@ test.group('Forum', (group) => {
       .loginAs(creator.user)
       .form(data)
       .withCsrfToken()
-    const forumModsAfterAddition = await Forum.query().where('id', '=', forum.id).preload('moderators').firstOrFail()
+    let forumModsAfterAddition = await Forum.query()
+      .where('id', '=', forum.id)
+      .preload('moderators')
+      .firstOrFail()
     const moderatorsLenAfterRemoval = forumModsAfterAddition.moderators.length
     assert.equal(response.status(), 403)
     assert.equal(moderatorsLength, moderatorsLenAfterRemoval)
   })
 
   test('Forum creator can delete their own forum', async ({ assert, client }) => {
-    const forum = await Forum.query()
+    let forum = await Forum.query()
       .has('moderators', '>', 1)
       .preload('moderators', async (mods) => await mods.orderBy('pivot_created_at', 'asc'))
       .firstOrFail()
     const creator = forum.moderators[0]
     await creator.load('user')
-    const response = await client.delete(`/api/f/${forum.name}`).loginAs(creator.user).withCsrfToken()
+    const response = await client
+      .delete(`/api/f/${forum.name}`)
+      .loginAs(creator.user)
+      .withCsrfToken()
     assert.equal(response.status(), 200)
-    const forumAfterDeleted = await Forum.query().where('id', '=', forum.id).preload('posts').firstOrFail()
+    let forumAfterDeleted = await Forum.query()
+      .where('id', '=', forum.id)
+      .preload('posts')
+      .firstOrFail()
     assert.equal(forumAfterDeleted.isDeleted, true)
     const posts = forumAfterDeleted.posts
-    const regularUser = await Profile.query().doesntHave('moderatedForums').preload('user').firstOrFail()
+    const regularUser = await Profile.query()
+      .doesntHave('moderatedForums')
+      .preload('user')
+      .firstOrFail()
     const visitForum = await client.get(`/api/f/${forum.name}`).loginAs(regularUser.user)
     const post = await Post.create({
       forumId: forum.id,
@@ -309,7 +358,9 @@ test.group('Forum', (group) => {
       posterId: creator.userId,
     })
     assert.equal(visitForum.status(), 403)
-    const viewThePost = await client.get(`/api/f/${forum.name}/posts/${post.slug}`).loginAs(regularUser.user)
+    const viewThePost = await client
+      .get(`/api/f/${forum.name}/posts/${post.slug}`)
+      .loginAs(regularUser.user)
     console.log(viewThePost.body())
   })
 })
