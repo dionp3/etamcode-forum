@@ -1,0 +1,29 @@
+@startuml
+actor       "User" as user
+boundary    "Register Page" as register_page
+boundary    "Dashboard" as dashboard
+control     "Authenticator" as auth
+database    "PostgreSQL" as localdb
+database    "Firestore" as firestore
+user -> register_page : input data
+register_page -> auth : sending the data
+auth -> auth : checking if the data exists
+auth -> localdb : look after the data
+auth -> firestore : look after the data
+alt data exists in both databases
+  auth --> register_page : send response
+  register_page --> user : show message data already exists
+end
+alt data in firestore exists, in local doesn't
+  firestore --> auth : send data
+  auth -> localdb : store data
+else data doesn't exist in both databases
+  auth -> localdb : store data
+  auth -> firestore : store data
+end
+auth -> register_page : send success response
+register_page -> user : show message data created
+auth -> auth : redirect to dashboard route
+user -> dashboard : access
+
+@enduml

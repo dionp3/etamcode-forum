@@ -1,0 +1,16 @@
+https://etamcode.org -> landing page
+
+landing page:
+- link ke forum, test, kursus, kanban
+- kalo ke forum?
+
+https://forum.etamcode.org -> FANCY
+https://etamcode.org/forum -> PELIT
+
+pas di endpoint https://etamcode.org/forum -> home page forum: isinya postingan, dsb di figma
+
+endpoint https://etamcode.org/forum/post/create -> bikin post di page baru (pages inertia) nama page? post/create.vue
+
+endpoint https://etamcode.org/forum/post/:id DELETE method -> modal
+
+endpoint https://etamcode.org/forum/post/:id GET method -> page baru (pages inertia) nama page? post/edit.vue, post/show.vue?

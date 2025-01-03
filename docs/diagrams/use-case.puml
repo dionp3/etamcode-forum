@@ -1,0 +1,108 @@
+@startuml
+skinparam linetype ortho
+:Guest: as guest
+:Authenticated User: as auth
+:Forum's Moderator: as forum_mod
+:Global Mod: as global_mod
+:Profile Owner: as profile_owner
+:Forum Creator: as forum_owner
+:Post Creator: as post_owner
+:Comment Creator: as comment_owner
+package Profile {
+  (See List) as prsl
+  (View Detail) as prvd
+  (Edit) as pre
+  (Delete) as prd
+  (Report) as prr
+  (Forum Ban) as prfb
+  (Global Ban) as prgb
+}
+package Forum {
+  (See List) as fsl
+  (View Detail) as fvd
+  (Create) as fc
+  (Edit) as fe
+  (Delete) as fd
+  (Report) as fr
+  (Add Moderator) as fam
+  (Remove Moderator) as frm
+  (Add Flair) as faf
+  (Modify Flair) as fmf
+  (Delete Flair) as fdf
+  (Hide Forum) as fhf
+  (transfer Forum) as ftf
+}
+package Post {
+  (See List) as psl
+  (View Detail) as pvd
+  (Create) as pc
+  (Edit) as pe
+  (Delete) as pd
+  (Report) as pr
+  (Lock) as pl
+  (Upvote) as puv
+  (Downvote) as pdv
+}
+package Comment {
+  (See List) as csl
+  (View Detail) as cvd
+  (Create) as cc
+  (Edit) as ce
+  (Delete) as cd
+  (Report) as cr
+}
+package Privilege {
+  (Add Global Moderator) as pgm
+  (Delete Global Moderator) as pdgm
+}
+auth --> cc
+auth --> cr
+auth --> fc
+auth --> fr
+auth --> pc
+auth --> pr
+auth --> prr
+comment_owner --> cd
+comment_owner --> ce
+forum_mod --> cd
+forum_mod --> faf
+forum_mod --> fam
+forum_mod --> fdf
+forum_mod --> fhf
+forum_mod --> fmf
+forum_mod --> frm
+forum_mod --> pd
+forum_mod --> pl
+forum_owner --> fam
+forum_owner --> fd
+forum_owner --> fe
+forum_owner --> ftf
+forum_owner --> pl
+forum_owner --> prfb
+global_mod --> csl
+global_mod --> pdgm
+global_mod --> pgm
+global_mod --> pl
+global_mod --> prfb
+global_mod --> prgb
+global_mod --> prsl
+guest --> cvd
+guest --> fsl
+guest --> fvd
+guest --> psl
+guest --> prvd
+guest --> pvd
+post_owner --> pd
+post_owner --> pe
+profile_owner --> pre
+profile_owner --> prd
+guest <|-- auth
+auth <|-- forum_owner
+auth <|-- post_owner
+auth <|-- comment_owner
+forum_owner <|-- global_mod
+post_owner <|-- global_mod
+comment_owner <|-- global_mod
+profile_owner--|> auth
+@enduml
+

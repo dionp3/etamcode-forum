@@ -1,0 +1,49 @@
+services:
+  adonis:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.prod}
+      target: ${TARGET:-prod}
+    container_name: forum-app
+    env_file:
+      - path: ${ENV_FILE:-.env}
+    ports:
+      - '3333:3333'
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: forum-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - '80:80'
+      - '443:443'
+    depends_on:
+      - adonis
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: forum-db
+    environment:
+      - POSTGRES_USER=4dmingant3ng
+      - POSTGRES_PASSWORD=r00t098890
+      - POSTGRES_DB=etamcode_forum
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    ports:
+      - '5555:5432'
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,46 @@
+# Base image with Node.js
+FROM node:20.17-alpine AS base
+
+# Dependencies stage
+FROM base AS deps
+WORKDIR /app
+ADD package.json package-lock.json ./
+RUN npm ci
+
+# Production dependencies stage (to omit dev dependencies in final image)
+FROM base AS production-deps
+WORKDIR /app
+ADD package.json package-lock.json ./
+RUN npm ci
+
+# # Build stage
+FROM base AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules /app/node_modules
+ADD . .
+RUN node ace build --ignore-ts-errors
+
+# Final production stage
+FROM base as prod
+ENV NODE_ENV=production
+ENV TZ=Asia/Kuala_Lumpur
+WORKDIR /app
+RUN apk update
+RUN apk add vim
+RUN apk add git
+RUN npm i -g pm2
+
+# Copy production dependencies and the build output
+COPY --from=production-deps /app/node_modules /app/build/node_modules
+COPY --from=build /app /app
+COPY --from=build /app/.env /app
+COPY --from=build /app/.env /app/build
+COPY --from=build /app/inertia /app/build
+COPY --from=build /app/tailwind.config.js /app/build
+RUN chmod +x start.sh refresh.sh
+
+# Expose the port your application will run on
+EXPOSE 3333
+
+# Run the application
+CMD ["./start.sh"]

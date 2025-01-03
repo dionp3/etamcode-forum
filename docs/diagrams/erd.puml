@@ -1,0 +1,448 @@
+@startuml
+
+' hide the spot
+' hide circle
+
+skinparam linetype ortho
+
+entity "Users" as users {
+  * **id** : <<PK>> serial
+  --
+  username: varchar(32) unique not null
+  email: text unique not null
+  password: text unique not null
+  is_admin: boolean default false not null
+  created_at: timestamp not null
+  updated_at: timestamp not null
+}
+
+entity "Profiles" as profiles {
+  * **user_id**: <<PK, FK | users>> integer not null
+  * **defult_avatar_id**: <<FK | avatars>> not null
+  --
+  display_name: varchar(50)
+  is_banned: boolean default false not null
+  bio: text
+  is_deleted: boolean default false not null
+  ban_expires_at: datatime not null
+  created_at: timestamp not null
+  updated_at: timestamp not null
+}
+
+entity "Forums" as forums {
+  * **id**: <<PK>> serial
+  * **icon**: <<FK | avatars>> integer not null
+  --
+  name: varchar(50) unique not null
+  description: text not null
+  banner: text
+  is_removed: boolean default false not null
+  * is_deleted: boolean default false not null
+  is_hidden: boolean default false not null
+  is_posting_restricted_to_mods: boolean default false not null
+  visibility: <<enum | forum_visibility>> default public not null
+  created_at: timestamp not null
+  updated_at: timestamp not null
+}
+
+entity "Flairs" as flairs {
+    * **id**: <<PK>> serial
+    * **forum_id**: <<FK | forums>> integer not null
+    --
+    name: varchar(20) not null
+    color: varchar(20) not null
+}
+
+entity "Posts" as posts {
+    * **id**: <<PK>> serial
+    * **poster_id**: <<FK | profiles>> integer not null
+    * **forum_id**: <<FK | forums>> integer not null
+    * **flair_id**: <<FK | flairs>> integer not null
+    --
+    title: varchar(100) not null
+    content: text
+    has_image: bool default false not null
+    image_url: text
+    is_removed: boolean default false not null
+    is_locked: boolean default false not null
+    created_at: timestamp not null
+    updated_at timestamp not null
+}
+
+entity "Comments" as comments {
+    * **id**: <<PK>> serial
+    * **creator_id**: <<FK | profiles>> integer not null
+    * **post_id**: <<FK | posts>> integer not null
+    * **parent_comment_id** <<FK | comments>> integer
+    --
+    content: varchar(255) not null
+    is_removed: boolean default false not null
+    is_read: boolean default false not null
+    * is_deleted: boolean default false not null
+    created_at: timestamp not null
+    updated_at: timestamp not null
+  }
+
+entity "Password Reset Requests" as password_reset_request {
+    * **id**: <<PK>> serial
+    * **user_id**: <<FK | users>> integer not null
+    --
+    token: text not null
+    created_at: timestamp not null
+  }
+
+entity "User Subscriptions" as user_subscriptions {
+    * **id**: <<PK>> serial
+    * **user_id**: <<FK | users>> integer unique not null
+    * **plan_id**: <<FK | subscription_plans>> integer not null
+    --
+    start_date: date not null
+    end_date: date not null
+    is_active: boolean default true not null
+    created_at: timestamp not null
+  }
+
+entity "Subscription Plans" as subscription_plans {
+    * **id**: <<PK>> serial
+    --
+    name: varchar(100) not null
+    description: text not null
+    price: double not null
+    duration_days: integer not null
+    created_at: timestamp not null
+    updated_at: timestamp not null
+  }
+
+entity "Profile Follower" as profile_follower {
+    * **following_id**: <<PK, FK | profiles>> integer not null
+    * **follower_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+    updated_at: timestamp not null
+  }
+
+entity "Profile Block" as profile_block {
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    * **target_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+  }
+
+entity "Profile Ban" as profile_ban {
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+  }
+
+entity "Post Hide" as post_hide {
+  * **post_id**: <<PK, FK | posts>> integer not null
+  * **profile_id**: <<PK, FK | profiles>> integer not null
+  --
+  created_at: timestamp not null
+  }
+
+entity "Post Read" as post_read {
+    * **post_id**: <<PK, FK | posts>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+  }
+
+entity "Post Saved" as post_saved {
+    * **post_id**: <<PK, FK | posts>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+  }
+
+
+entity "Post Like" as post_like {
+    * **post_id**: <<PK, FK | posts>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    score: smallint not null
+    created_at: timestamp not null
+  }
+
+entity "Post Aggregates" as post_aggregates {
+    * **post_id**: <<PK, FK | posts>> integer not null
+    * **forum_id**: <<FK | forums>> integer not null
+    * **creator_id**: <<FK | profiles>> integer not null
+    --
+    comments: bigint default 0 not null
+    upvotes: bigint default 0 not null
+    downvotes: bigint default 0 not null
+    created_at: timestamp not null
+    updated_at: timestamp not null
+  }
+
+entity "Post Report" as post_report {
+    * **id**: <<PK>> serial
+    * **creator_id**: <<FK | users>> integer unique not null
+    * **post_id**: <<FK | posts>> integer unique not null
+    * **resolver**: <<FK | users>> integer not null
+    --
+    original_post_name: varchar(200) not null
+    original_post_url: text
+    original_post_body: text
+    reason: text not null
+    is_resolved: boolean default false not null
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Forum Moderator" as forum_moderator {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Forum Profile Ban" as forum_profile_ban {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Forum Block" as forum_block {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Forum Follower" as forum_follower {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    is_pending: boolean default false not null
+    created_at: timestamp not null
+  }
+
+entity "Mod Transfer Forum" as mod_transfer_forum {
+    * **id**: <<PK>> serial
+    * **mod_profile**: <<FK | profiles>> integer not null
+    * **other_profile**: <<FK | profiles>> integer not null
+    * **forum_id**: <<FK | forums>> integer not null
+    --
+    transfered_at: timestamp not null
+  }
+
+entity "Forum Aggregates" as forum_aggregates {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    --
+    subscribers: bigint default 0 not null
+    posts: bigint default 0 not null
+    comments: bigint default 0 not null
+    users_active_day: bigint default 0 not null
+    users_active_week: bigint default 0 not null
+    users_active_month: bigint default 0 not null
+    hot_rank: double precision default 0.00001 not null
+    created_at: timestamp not null
+  }
+
+entity "Comment Report" as comment_report {
+    * **id**: <<PK>> serial
+    * **creator_id**: <<FK | profiles>> integer unique not null
+    * **comment_id**: <<FK | comments>> integer unique not null
+    * **resolver_id**: <<FK | profiles>> integer not null
+    --
+    original_comment_text: text not null
+    reason: text not null
+    is_resolved: boolean default false not null
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Comment Like" as comment_like {
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    * **post_id**: <<PK, FK | posts>> integer not null
+    * **comment_id**: <<PK, FK | comments>> integer not null
+    --
+    score: smallint not null
+    created_at: timestamp not null
+  }
+
+entity "Comment Saved" as comment_saved {
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    * **comment_id**: <<PK, FK | comments>> integer not null
+    --
+    created_at: timestamp not null
+  }
+
+entity "Comment Reply" as comment_reply {
+    * **id**: <<PK>> serial
+    * **recipient_id**: <<FK | profiles>> integer unique not null
+    * **comment_id**: <<FK | comments>> integer unique not null
+    --
+    is_read: boolean default false not null
+    created_at: timestamp not null
+  }
+
+entity "Comment Aggregates" as comment_aggregates {
+    * **id**: <<PK, FK | comments>> integer not null
+    --
+    score: bigint default 0 not null
+    upvotes: bigint default 0 not null
+    downvotes: bigint default 0 not null,
+    created_at: timestamp with time zone default now() not null,
+    child_count: integer default 0 not null,
+    hot_rank: double precision default 0.0001 not null,
+    controversy_rank: double precision default 0 not null
+
+  }
+
+entity "Profile Mention" as profile_mention {
+    * **id**: <<PK>> serial
+    * **recipient_id**: <<FK | profiles>> integer unique not null
+    * **comment_id**: <<FK | comments>> integer unique not null
+    --
+    is_read: boolean default false not null
+    created_at: timestamp not null
+  }
+
+entity "Profile Aggregates" as profile_aggregates {
+    * **id**: profile_id: <<PK, FK | profiles>> integer not null
+    --
+    post_count: bigint default 0 not null
+    post_score: bigint default 0 not null
+    comment_count: bigint default 0 not null
+    comment_score: bigint default 0 not null
+  }
+
+entity "Email Verification" as email_verification {
+    * **id**: <<PK>> serial
+    * **user_id**: <<FK | users>> integer not null
+    --
+    email: text not null
+    verification_token: text not null
+    created_at: timestamp with time zone default now() not null
+  }
+
+entity "Profile Post Aggregates" as profile_post_aggregates {
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    * **post_id**: <<FK | posts>> integer not null
+    --
+    read_comments: bigint default 0 not null
+    published: timestamp with time zone default now() not null
+  }
+
+entity "Post Hashtag" as post_hashtag {
+    * **post_id**: <<PK, FK | posts>> integer not null
+    * **hashtag_id**: <<PK, FK | hashtags>> integer not null
+  }
+
+entity "Hashtags" as hashtags {
+    * **id**: <<PK>> serial
+    --
+    name: varchar(100) not null
+  }
+
+entity "Admin Purge Comment" as admin_purge_comment {
+    * **id**: <<PK>> serial
+    * **admin_profile_id**: <<FK | profiles>> integer not null
+    * **post_id**: <<FK | posts>> integer not null
+    --
+    reason: text
+    purged_at: timestamp with time zone default now() not null
+
+  }
+
+entity "Admin Purge Forum" as admin_purge_forum {
+    * **id**: <<PK>> serial
+    * **admin_profile_id**: <<FK | profiles>> integer not null
+    --
+    reason: text
+    purged_at: timestamp with time zone default now() not null
+  }
+
+entity "Admin Purge Profile" as admin_purge_profile {
+    * **id**: <<PK>> serial
+    * **admin_profile_id**: <<FK | profiles>> integer not null
+    --
+    reason: text
+    purged_at: timestamp with time zone default now() not null
+  }
+
+entity "Admin Purge Post" as admin_purge_post {
+    * **id**: <<PK>> serial
+    * **admin_profile_id**: <<FK | profiles>> integer not null
+    * **forum_id**: <<FK | forums>> integer not null
+    --
+    reason: text
+    purged_at: timestamp with time zone default now() not null
+  }
+
+entity "Avatars" as avatars {
+    * **id**: <<PK>> serial
+    --
+    url: text not null
+  }
+
+comments ||..|| comment_aggregates
+comments ||..|{ comment_reply
+comments ||..|{ comment_report
+comments ||..|{ profile_mention
+comments }|..|{ comment_like
+comments }|..|{ comment_reply
+comments }|..|| posts
+forums ||..|| avatars
+forums ||..|| forum_aggregates
+forums ||..|{ admin_purge_post
+forums ||..|{ flairs
+forums }|..|{ forum_block
+forums }|..|{ forum_follower
+forums }|..|{ forum_moderator
+forums }|..|{ forum_profile_ban
+forums }|..|{ mod_transfer_forum
+post_hashtag }|..|{ hashtags
+posts ||..|| post_aggregates
+posts ||..|{ admin_purge_comment
+posts ||..|{ post_report
+posts }|..|{ post_hide
+posts }|..|{ post_like
+posts }|..|{ post_read
+posts }|..|{ post_saved
+posts }|..|{ post_hashtag
+posts }|..|{ profile_post_aggregates
+profiles ||..|| avatars
+profiles ||..|| profile_aggregates
+profiles ||..|| profile_ban
+profiles ||..|{ admin_purge_comment
+profiles ||..|{ admin_purge_forum
+profiles ||..|{ admin_purge_post
+profiles ||..|{ admin_purge_profile
+profiles ||..|{ comment_reply
+profiles ||..|{ comment_report
+profiles ||..|{ comments
+profiles ||..|{ mod_transfer_forum
+profiles ||..|{ post_aggregates
+profiles ||..|{ posts
+profiles ||..|{ profile_mention
+profiles }|..|{ comment_like
+profiles }|..|{ comment_saved
+profiles }|..|{ forum_block
+profiles }|..|{ forum_follower
+profiles }|..|{ forum_moderator
+profiles }|..|{ forum_profile_ban
+profiles }|..|{ post_hide
+profiles }|..|{ post_like
+profiles }|..|{ post_read
+profiles }|..|{ post_report
+profiles }|..|{ post_saved
+profiles }|..|{ profile_block
+profiles }|..|{ profile_follower
+profiles }|..|{ profile_post_aggregates
+users ||..|| profiles
+users ||..|| user_subscriptions
+users ||..|{ email_verification
+users ||..|{ password_reset_request
+subscription_plans }|..|| user_subscriptions
+
+@enduml
+
+

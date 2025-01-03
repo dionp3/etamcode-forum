@@ -1,0 +1,36 @@
+entity "Forum Profile Ban" as forum_profile_ban {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Forum Block" as forum_block {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    created_at: timestamp not null
+    updated_at: timestamp
+  }
+
+entity "Forum Follower" as forum_follower {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    * **profile_id**: <<PK, FK | profiles>> integer not null
+    --
+    is_pending: boolean default false not null
+    created_at: timestamp not null
+  }
+
+entity "Forum Aggregates" as forum_aggregates {
+    * **forum_id**: <<PK, FK | forums>> integer not null
+    --
+    subscribers: bigint default 0 not null
+    posts: bigint default 0 not null
+    comments: bigint default 0 not null
+    users_active_day: bigint default 0 not null
+    users_active_week: bigint default 0 not null
+    users_active_month: bigint default 0 not null
+    hot_rank: double precision default 0.00001 not null
+    created_at: timestamp not null
+  }

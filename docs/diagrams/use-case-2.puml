@@ -1,0 +1,78 @@
+@startuml
+
+left to right direction
+:Authenticated User: as auth
+:Forum's Moderator: as forum_mod
+:Global Mod: as global_mod
+:Profile Owner: as profile_owner
+:Forum Creator: as forum_owner
+:Post Creator: as post_owner
+:Comment Creator: as comment_owner
+
+package Profile {
+  (Edit) as pre
+  (Delete) as prd
+  (Forum Ban) as prfb
+  (Global Ban) as prgb
+  (See List) as prsl
+}
+
+package Forum {
+  (Edit) as fe
+  (Delete) as fd
+  (Add Moderator) as fam
+  (Transfer Forum) as ftf
+  (Remove) as fr
+  (Hide) as fh
+}
+
+package Post {
+  (Edit) as pe
+  (Delete) as pd
+  (Lock) as pl
+  (Remove) as pr
+}
+
+package Comment {
+  (See List) as csl
+  (Edit) as ce
+  (Delete) as cd
+  (Remove) as cr
+}
+
+package Privilege {
+  (Add Global Moderator) as pagm
+  (Delete Global Moderator) as pdgm
+}
+
+' Relations
+comment_owner --> cd
+comment_owner --> ce
+forum_mod --> fam
+forum_mod --> pl
+forum_mod --> prfb
+forum_mod --> pr
+forum_mod --> cr
+forum_owner --> fd
+forum_owner --> fe
+forum_owner --> ftf
+global_mod --> csl
+global_mod --> pdgm
+global_mod --> pagm
+global_mod --> pl
+global_mod --> prfb
+global_mod --> prgb
+global_mod --> prsl
+global_mod --> fr
+global_mod --> fh
+post_owner --> pd
+post_owner --> pe
+profile_owner --> pre
+profile_owner --> prd
+
+' Inheritances
+forum_mod <|-- forum_owner
+auth <|-- post_owner
+auth <|-- comment_owner
+auth <|-- profile_owner
+@enduml

@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: 0.9375rem; /* Sets the base font size to approximately 14px without using px */
+}
+
+.logoColor {
+  @apply text-base-100;
+}
+
+.lucide {
+  @apply text-base-content size-6 bg-transparent;
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
+.divider:before,
+.divider:after {
+  height: 0.0625rem;
+  /* 2px */
+}
+
+.markdown-body {
+  @apply prose;
+}
+
+.spoiler {
+  background-color: #444; /* Dark background for spoilers */
+  color: transparent;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.spoiler.active {
+  color: inherit; /* Reveal text when active */
+}
+
+.spoiler slot {
+  display: inline; /* Ensure content is inline */
+}
